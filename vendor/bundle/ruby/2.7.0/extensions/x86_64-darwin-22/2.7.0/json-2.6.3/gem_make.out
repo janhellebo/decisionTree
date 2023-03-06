@@ -1,0 +1,16 @@
+current directory: /Users/janhellebo/Documents/Chime/github/reactTree-master/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+/Users/janhellebo/.rvm/rubies/ruby-2.7.6/bin/ruby -I /Users/janhellebo/.rvm/rubies/ruby-2.7.6/lib/ruby/site_ruby/2.7.0 extconf.rb
+creating Makefile
+
+current directory: /Users/janhellebo/Documents/Chime/github/reactTree-master/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make DESTDIR\= sitearchdir\=./.gem.20230305-71781-qt61zq sitelibdir\=./.gem.20230305-71781-qt61zq clean
+
+current directory: /Users/janhellebo/Documents/Chime/github/reactTree-master/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make DESTDIR\= sitearchdir\=./.gem.20230305-71781-qt61zq sitelibdir\=./.gem.20230305-71781-qt61zq
+make: Nothing to be done for `all'.
+
+current directory: /Users/janhellebo/Documents/Chime/github/reactTree-master/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make DESTDIR\= sitearchdir\=./.gem.20230305-71781-qt61zq sitelibdir\=./.gem.20230305-71781-qt61zq install
+
+current directory: /Users/janhellebo/Documents/Chime/github/reactTree-master/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make DESTDIR\= sitearchdir\=./.gem.20230305-71781-qt61zq sitelibdir\=./.gem.20230305-71781-qt61zq clean
