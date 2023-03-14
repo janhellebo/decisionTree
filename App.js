@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import DecisionTree from './decision-tree';
-import { Text, View, TextInput, StyleSheet } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { trainingData, testData } from './data/treeData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider'
+import Icon from "react-native-vector-icons/FontAwesome";
 
 
 const App = () => {
@@ -97,7 +98,8 @@ const App = () => {
   const [sleep, setSleep] = useState(7);
   const [water, setWater] = useState('');
   const [alcohol, setAlcohol] = useState('');
-  const [mood, setMood] = useState(5);
+  // const [mood, setMood] = useState(5);
+  const [mood, setMood] = useState(null);
 
 
   const handleStepsChange = (text) => {
@@ -132,6 +134,18 @@ const App = () => {
       alert(error.message);
     }
   };
+
+  // const getData = async () => {
+  //   try {
+  //     const value = await AsyncStorage.getItem("@mood_value");
+  //     if (value !== null) {
+  //       // value previously stored
+  //       return value;
+  //     }
+  //   } catch (e) {
+  //     // error reading value
+  //   }
+  // };
 
   // <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
 
@@ -189,7 +203,38 @@ const App = () => {
         value={mood}
         onValueChange={handleMoodChange}
         onSlidingComplete={saveData}
-      />      
+      />    
+      <Text style={styles.text}>How are you feeling today?</Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            setMood("happy");
+            saveData("happy");
+          }}
+        >
+          <Icon name="smile-o" size={60} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            setMood("neutral");
+            saveData("neutral");
+          }}
+        >
+          <Icon name="meh-o" size={60} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            setMood("sad");
+            saveData("sad");
+          }}
+        >
+          <Icon name="frown-o" size={60} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.text}>You selected: {mood}</Text>
     </View>
   
   
@@ -218,6 +263,19 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderRadius: 10, // Add rounded edges
     padding: 10,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "80%",
+  },
+  button: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#3b5998",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
