@@ -246,6 +246,92 @@ class DecisionTree {
       return `${acc} \n ${string}`;
     }, '');
   }
+
+
+  // Jan Hellebo summary code
+
+  // generateSummary(input) {
+  //   const summary = this._generateSummaryHelper(this.decisionTree, input);
+  //   return `Based on your existing data, ${summary.join(" and ")} will improve your mood by one level.`;
+  // }
+  
+  // _generateSummaryHelper(node, input) {
+  //   if (node instanceof Leaf) {
+  //     return [];
+  //   }
+  
+  //   const feature = node.question.column;
+  //   const threshold = node.question.value;
+  //   const inputValue = input[feature];
+  
+  //   let summary = [];
+  
+  //   if (inputValue < threshold) {
+  //     summary.push(`increasing your ${feature} to at least ${threshold}`);
+  //   } else if (feature === "alcohol consumption" && inputValue >= threshold) {
+  //     summary.push(`reducing your ${feature} to less than ${threshold}`);
+  //   }
+  
+  //   if (node.question.match(input)) {
+  //     summary = summary.concat(this._generateSummaryHelper(node.trueBranch, input));
+  //   } else {
+  //     summary = summary.concat(this._generateSummaryHelper(node.falseBranch, input));
+  //   }
+  
+  //   return summary;
+  // }
+
+  _generateSummaryHelper(node, input) {
+    if (node instanceof Leaf) {
+      return [];
+    }
+  
+    const feature = node.question.column;
+    const threshold = node.question.value;
+    const inputValue = input[feature];
+  
+    let summary = [];
+  
+    const units = {
+      'step count': 'steps',
+      'sleep': 'hours',
+      'water consumption': 'liters',
+      'alcohol consumption': 'units',
+    };
+  
+    if (inputValue < threshold) {
+      const summaryText = `increasing your ${feature} to at least ${threshold} ${units[feature]}`;
+      summary.push({ feature, threshold, summaryText });
+    } else if (feature === "alcohol consumption" && inputValue >= threshold) {
+      const summaryText = `reducing your ${feature} to less than ${threshold} ${units[feature]}`;
+      summary.push({ feature, threshold, summaryText });
+    }
+  
+    const childSummary = node.question.match(input)
+      ? this._generateSummaryHelper(node.trueBranch, input)
+      : this._generateSummaryHelper(node.falseBranch, input);
+  
+    childSummary.forEach(child => {
+      const existing = summary.find(s => s.feature === child.feature);
+      if (existing) {
+        if (child.threshold > existing.threshold) {
+          existing.threshold = child.threshold;
+          existing.summaryText = child.summaryText;
+        }
+      } else {
+        summary.push(child);
+      }
+    });
+  
+    return summary;
+  }
+  
+  generateSummary(input) {
+    const summaryObjects = this._generateSummaryHelper(this.decisionTree, input);
+    const summary = summaryObjects.map(s => s.summaryText);
+    return `Based on your existing data, ${summary.join(" and ")} will improve your mood by one level.`;
+  }
+
 }
 
 /**
@@ -345,4 +431,9 @@ function isNumeric(value) {
   return typeof value === 'number';
 }
 
+
+
 module.exports = DecisionTree;
+
+module.exports.generateSummary = DecisionTree.prototype.generateSummary;
+
