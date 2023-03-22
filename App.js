@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DecisionTree from './decision-tree';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button } from 'react-native';
 import { trainingData, testData } from './data/treeData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider'
@@ -10,6 +10,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import PredictMoodScreen from './PredictMoodScreen';
 import { useNavigation } from '@react-navigation/native';
 import {generateSummary} from './decision-tree';
+
+import { db } from './firebaseConfig';
+
+import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
 
 
 const Stack = createStackNavigator();
@@ -47,16 +51,128 @@ const HomeScreen = () => {
     setMood(value);
   };
 
-  const saveData = async () => {
+  // const saveData = async () => {
+  //   try {
+  //     await AsyncStorage.setItem('steps', steps);
+  //     await AsyncStorage.setItem('sleep', sleep.toString());
+  //     await AsyncStorage.setItem('water', water);
+  //     await AsyncStorage.setItem('alchohol', alcohol);
+  //     await AsyncStorage.setItem('mood', mood.toString());
+  //     alert('Data saved successfully!');
+  //   } catch (error) {
+  //     alert(error.message);
+  //   }
+  // };
+
+  // // SaveData using addDoc
+  // const saveData = () => {
+  //   try {
+  //     console.log('1. Saving data...');
+  //     const usersCollection = collection(db, 'users');
+  //     console.log('2. Collection reference:', usersCollection);
+  
+  //     console.log('3. Adding document...');
+  
+  //     const data = {
+  //       steps: steps,
+  //       sleep: sleep,
+  //       water: water,
+  //       alcohol: alcohol,
+  //       mood: mood,
+  //     };
+  
+  //     console.log('Data to save:', data);
+  
+  //     addDoc(usersCollection, data)
+  //       .then((docRef) => {
+  //         console.log('4. Data saved successfully with ID:', docRef.id);
+  //         alert('Data saved successfully!');
+  //       })
+  //       .catch((addDocError) => {
+  //         console.error('Error adding document:', addDocError);
+  //         alert(addDocError.message);
+  //       });
+  
+  //   } catch (error) {
+  //     console.error('Error saving data:', error);
+  //     alert(error.message);
+  //   }
+  // };
+  
+  // // SaveData using setDoc
+  // const saveData = async () => {
+  //   try {
+  //     console.log('1. Saving data...');
+  //     const usersCollection = collection(db, 'users');
+  //     console.log('2. Collection reference:', usersCollection);
+  
+  //     const userRef = doc(usersCollection);
+  //     console.log('3. User reference:', userRef);
+  
+  //     await setDoc(userRef, {
+  //       steps: steps,
+  //       sleep: sleep,
+  //       water: water,
+  //       alcohol: alcohol,
+  //       mood: mood,
+  //     });
+  
+  //     console.log('4. Data saved successfully');
+  //     alert('Data saved successfully!');
+  //   } catch (error) {
+  //     console.error('Error saving data:', error);
+  //     alert(error.message);
+  //   }
+  // };
+
+  const saveData = async (userId) => {
     try {
-      await AsyncStorage.setItem('steps', steps);
-      await AsyncStorage.setItem('sleep', sleep.toString());
-      await AsyncStorage.setItem('water', water);
-      await AsyncStorage.setItem('alchohol', alcohol);
-      await AsyncStorage.setItem('mood', mood.toString());
+      console.log('1. Saving data...');
+      const usersCollection = collection(db, 'users');
+      console.log('2. Collection reference:', usersCollection);
+  
+      // Get the current date as a string in the format 'YYYY-MM-DD'
+      const currentDate = new Date();
+      const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+  
+      // Combine the user's ID with the date to create a unique document ID
+      const uniqueDocId = `${userId}_${dateId}`;
+  
+      const userRef = doc(usersCollection, uniqueDocId);
+      console.log('3. User reference:', userRef);
+  
+      await setDoc(userRef, {
+        steps: steps,
+        sleep: sleep,
+        water: water,
+        alcohol: alcohol,
+        mood: mood,
+      });
+  
+      console.log('4. Data saved successfully');
       alert('Data saved successfully!');
     } catch (error) {
+      console.error('Error saving data:', error);
       alert(error.message);
+    }
+  };
+  
+  
+
+
+  const fetchData = async () => {
+    try {
+      const userRef = db.firestore().collection('users').doc('user1');
+      const doc = await userRef.get();
+      if (doc.exists) {
+        const userData = doc.data();
+        // Use userData (an object containing steps, sleep, water, alcohol, and mood) to create a new decision tree
+        // For example: createDecisionTree(userData);
+      } else {
+        console.log('No such document!');
+      }
+    } catch (error) {
+      console.log('Error getting document:', error);
     }
   };
 
@@ -273,8 +389,9 @@ const HomeScreen = () => {
               step={1}
               value={sleep}
               onValueChange={handleSleepChange}
-              onSlidingComplete={saveData}
+              // onSlidingComplete={saveData}
             />
+            <Button title="Save" onPress={saveData} />
             <Text style={styles.text}>Water: {water} litres</Text>
             <TextInput
               style={styles.input}
