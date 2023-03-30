@@ -11,15 +11,54 @@ import PredictMoodScreen from './PredictMoodScreen';
 import { useNavigation } from '@react-navigation/native';
 import {generateSummary} from './decision-tree';
 
-import { db } from './firebaseConfig';
+// import { db } from './firebaseConfig';
 
-import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 
+import { addDoc, collection, doc, setDoc } from '@react-native-firebase/firestore';
+
+// Add these imports
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import auth from '@react-native-firebase/auth';
 
 const Stack = createStackNavigator();
 
-const HomeScreen = () => {
+GoogleSignin.configure({
+  webClientId: '27440707536-o941tlubbcghbtb879srur1jcfulq88s.apps.googleusercontent.com',
+});
+
+const signInWithGoogle = async () => {
+  try {
+    const { idToken } = await GoogleSignin.signIn();
+    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+    const signInResult = await auth().signInWithCredential(googleCredential);
+
+    return signInResult;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const HomeScreen = ({email}) => {
   const navigation = useNavigation();
+
+  // Add a state for the user
+  const [user, setUser] = useState(null);
+
+  // Add an effect to listen to the auth state
+  useEffect(() => {
+    const unsubscribe = auth().onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);  
 
 
   const [steps, setSteps] = useState('');
@@ -125,10 +164,10 @@ const HomeScreen = () => {
   //   }
   // };
 
-  const saveData = async (userId) => {
+  const saveData = async () => {
     try {
       console.log('1. Saving data...');
-      const usersCollection = collection(db, 'users');
+      const usersCollection = firestore().collection('users');
       console.log('2. Collection reference:', usersCollection);
   
       // Get the current date as a string in the format 'YYYY-MM-DD'
@@ -136,12 +175,12 @@ const HomeScreen = () => {
       const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
   
       // Combine the user's ID with the date to create a unique document ID
-      const uniqueDocId = `${userId}_${dateId}`;
+      const uniqueDocId = `${email}_${dateId}`;
   
-      const userRef = doc(usersCollection, uniqueDocId);
+      const userRef = await usersCollection.doc(uniqueDocId);
       console.log('3. User reference:', userRef);
   
-      await setDoc(userRef, {
+      await userRef.set ({
         steps: steps,
         sleep: sleep,
         water: water,
@@ -162,7 +201,7 @@ const HomeScreen = () => {
 
   const fetchData = async () => {
     try {
-      const userRef = db.firestore().collection('users').doc('user1');
+      const userRef = await firestore().collection('users').doc('user1');
       const doc = await userRef.get();
       if (doc.exists) {
         const userData = doc.data();
@@ -424,7 +463,7 @@ const HomeScreen = () => {
                 style={[styles.button, { backgroundColor: "green" }]}
                 onPress={() => {
                   setMood("happy");
-                  saveData("happy");
+                  saveData();
                 }}
               >
                 <Icon name="smile-o" size={60} color="#fff" />
@@ -433,7 +472,7 @@ const HomeScreen = () => {
                 style={[styles.button, { backgroundColor: "grey" }]}
                 onPress={() => {
                   setMood("neutral");
-                  saveData("neutral");
+                  saveData();
                 }}
               >
                 <Icon name="meh-o" size={60} color="#fff" />
@@ -442,7 +481,7 @@ const HomeScreen = () => {
                 style={[styles.button, { backgroundColor: "blue" }]}
                 onPress={() => {
                   setMood("sad");
-                  saveData("sad");
+                  saveData();
                 }}
               >
                 <Icon name="frown-o" size={60} color="#fff" />
@@ -467,12 +506,52 @@ const HomeScreen = () => {
   );
 };
 
+const SignInScreen = ({
+  onSignIn
+}) => {
+  const handleSignIn = async () => {  
+    try {
+      const result = await signInWithGoogle();
+      console.log('Signed in with Google!');
+      onSignIn(result.user.email);
+    } catch (e) {
+      alert('Authentication failed, please try again.');
+      console.error(e);
+    }
+  };
+      
+  return (
+    <View style={styles.signInContainer}>
+      <Text style={styles.signInText}>Sign in with Google</Text>
+      <TouchableOpacity onPress={handleSignIn} style={styles.signInButton}>
+        <Icon name="google" size={30} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const App = () => {
+  const [ signedIn, setSignedIn ] = useState(false);
+  const [email, setEmail] = useState(null);
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="PredictMood" component={PredictMoodScreen} />
+        {signedIn ? (
+          <>
+            <Stack.Screen name="Home">
+              {(props) => <HomeScreen {...props} email={email} />}
+              </Stack.Screen>
+            <Stack.Screen name="PredictMood" component={PredictMoodScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="SignIn">
+            {(props) => <SignInScreen {...props} onSignIn={(userEmail) => {
+              setEmail(userEmail);
+              setSignedIn(true);
+            }} />}
+          </Stack.Screen>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -535,6 +614,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  // Add styles for the sign-in screen
+  signInContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  signInText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  signInButton: {
+    backgroundColor: '#4285F4',
+    padding: 10,
+    borderRadius: 5,
+  },  
 });
 
 export default App;

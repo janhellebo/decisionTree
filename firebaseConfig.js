@@ -105,21 +105,21 @@
 
 
 
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+// import { initializeApp } from 'firebase/app';
+// import { getFirestore } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA8HleEjp_9ymVdaflDuPTxSUp_tBDY_tw",
-  authDomain: "healthtree-c2a24.firebaseapp.com",
-  projectId: "healthtree-c2a24",
-  storageBucket: "healthtree-c2a24.appspot.com",
-  messagingSenderId: "27440707536",
-  appId: "1:27440707536:web:0bf2ca8890daefd6932bd5",
-  measurementId: "G-9QZ26B7DX4",
-};
+// const firebaseConfig = {
+//   apiKey: "AIzaSyA8HleEjp_9ymVdaflDuPTxSUp_tBDY_tw",
+//   authDomain: "healthtree-c2a24.firebaseapp.com",
+//   projectId: "healthtree-c2a24",
+//   storageBucket: "healthtree-c2a24.appspot.com",
+//   messagingSenderId: "27440707536",
+//   appId: "1:27440707536:web:0bf2ca8890daefd6932bd5",
+//   measurementId: "G-9QZ26B7DX4",
+// };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// const app = initializeApp(firebaseConfig);
+// const db = getFirestore(app);
 
-export { db };
+// export { db };
 
