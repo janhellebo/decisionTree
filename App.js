@@ -17,9 +17,10 @@ import firestore from '@react-native-firebase/firestore';
 
 import { addDoc, collection, doc, setDoc } from '@react-native-firebase/firestore';
 
-// Add these imports
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
+import analytics from '@react-native-firebase/analytics';
+
 
 const Stack = createStackNavigator();
 
@@ -63,10 +64,12 @@ const HomeScreen = ({email}) => {
 
   const [steps, setSteps] = useState('');
   const [sleep, setSleep] = useState(7);
-  const [water, setWater] = useState('');
+  const [exercise, setExercise] = useState('');
   const [alcohol, setAlcohol] = useState('');
   // const [mood, setMood] = useState(5);
   const [mood, setMood] = useState(null);
+  const [selectedMood, setSelectedMood] = useState(null);
+
   const [syntheticData, setSyntheticData] = useState([]);
 
 
@@ -78,8 +81,8 @@ const HomeScreen = ({email}) => {
     setSleep(value);
   };
 
-  const handleWaterChange = (text) => {
-    setWater(text);
+  const handleExerciseChange = (text) => {
+    setExercise(text);
   };
 
   const handleAlcoholChange = (text) => {
@@ -89,6 +92,10 @@ const HomeScreen = ({email}) => {
   const handleMoodChange = (value) => {
     setMood(value);
   };
+
+  // const handleMoodSelection = (mood) => {
+  //   setSelectedMood(mood);
+  // };
 
   // const saveData = async () => {
   //   try {
@@ -183,12 +190,20 @@ const HomeScreen = ({email}) => {
       await userRef.set ({
         steps: steps,
         sleep: sleep,
-        water: water,
+        exercise: exercise,
         alcohol: alcohol,
         mood: mood,
       });
   
       console.log('4. Data saved successfully');
+      // Log an event using Firebase Analytics
+      await analytics().logEvent('data_saved', {
+        steps: steps,
+        sleep: sleep,
+        exercise: exercise,
+        alcohol: alcohol,
+        mood: mood,
+      });    
       alert('Data saved successfully!');
     } catch (error) {
       console.error('Error saving data:', error);
@@ -235,7 +250,7 @@ const HomeScreen = ({email}) => {
       const dayData = {
         steps: Math.floor(Math.random() * 20000), // Random step count between 0 and 20000
         sleep: parseFloat((Math.random() * 14).toFixed(1)), // Random hours of sleep between 0 and 14 (with 1 decimal)
-        water: parseFloat((Math.random() * 5).toFixed(1)), // Random water intake between 0 and 5 liters (with 1 decimal)
+        exercise: parseFloat(Math.random() * 60), // Random exercise duration between 0 and 60 minutes
         alcohol: parseFloat((Math.random() * 10).toFixed(1)), // Random alcohol intake between 0 and 10 units (with 1 decimal)
         mood: Math.floor(Math.random() * 3) , // Random mood rating between 0 and 2
       };
@@ -285,7 +300,7 @@ const HomeScreen = ({email}) => {
 
   // const keys = ["x1", "x2", "x3", "x4", "species"];
 
-  const keys = ["steps", "sleep", "water", "alcohol", "mood"];
+  const keys = ["steps", "sleep", "exercise", "alcohol", "mood"];
 
 
   // const irisTestObj = irisTest.map((value) => {
@@ -308,7 +323,7 @@ const HomeScreen = ({email}) => {
   // Iris
   // const model = new DecisionTree('species', ['x1', 'x2', 'x3', 'x4'], irisTrainObj);
 
-  const model = new DecisionTree("mood", ["steps", "sleep", "water", "alcohol"], syntheticTrainData);
+  const model = new DecisionTree("mood", ["steps", "sleep", "exercise", "alcohol"], syntheticTrainData);
 
 
   // prints the generated tree
@@ -342,11 +357,11 @@ const HomeScreen = ({email}) => {
   for (let i = 0; i < syntheticTestData.length; i++) {
     let steps = syntheticTestData[i]["steps"];
     let sleep = syntheticTestData[i]["sleep"];
-    let water = syntheticTestData[i]["water"];
+    let water = syntheticTestData[i]["exercise"];
     let alcohol = syntheticTestData[i]["alcohol"];
     let actualMood = syntheticTestData[i]["mood"];
 
-    let predictedMood = Object.keys(model.classify({ "steps": steps, "sleep": sleep, "water": water, "alcohol": alcohol }));
+    let predictedMood = Object.keys(model.classify({ "steps": steps, "sleep": sleep, "exercise": exercise, "alcohol": alcohol }));
 
     if (predictedMood == actualMood) {
       correct++;
@@ -377,7 +392,7 @@ const HomeScreen = ({email}) => {
   const input = {
     'step count': 6000,
     'sleep': 6,
-    'water consumption': 1.5,
+    'exercise duration': 15,
     'alcohol consumption': 2,
   };
   
@@ -418,7 +433,7 @@ const HomeScreen = ({email}) => {
               placeholder="Enter your step-count"
               value={steps}
               onChangeText={handleStepsChange}
-              onSubmitEditing={saveData}
+              // onSubmitEditing={saveData}
             />
             <Text style={styles.text}>Hours of sleep: {sleep}</Text>
             <Slider
@@ -430,14 +445,13 @@ const HomeScreen = ({email}) => {
               onValueChange={handleSleepChange}
               // onSlidingComplete={saveData}
             />
-            <Button title="Save" onPress={saveData} />
-            <Text style={styles.text}>Water: {water} litres</Text>
+            <Text style={styles.text}>Exercise: {exercise} minutes</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter amount of water drank in litres"
-              value={water}
-              onChangeText={handleWaterChange}
-              onSubmitEditing={saveData}
+              placeholder="Enter amount of exercise done in minutes"
+              value={exercise}
+              onChangeText={handleExerciseChange}
+              // onSubmitEditing={saveData}
             />
             <Text style={styles.text}>Units of alcohol: {alcohol} units</Text>
             <TextInput
@@ -445,9 +459,9 @@ const HomeScreen = ({email}) => {
               placeholder="Enter amount of alchol drank in units"
               value={alcohol}
               onChangeText={handleAlcoholChange}
-              onSubmitEditing={saveData}
+              // onSubmitEditing={saveData}
             />
-            <Text style={styles.text}>Rate your mood: {mood}</Text>
+            {/* <Text style={styles.text}>Rate your mood: {mood}</Text>
             <Slider
               style={styles.slider}
               minimumValue={1}
@@ -456,8 +470,41 @@ const HomeScreen = ({email}) => {
               value={mood}
               onValueChange={handleMoodChange}
               onSlidingComplete={saveData}
-            />    
+            />     */}
+            {/* Mood question */}
             <Text style={styles.text}>How are you feeling today?</Text>
+
+            {/* Smiley face buttons */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, mood === 'happy' ? styles.selected : null, { backgroundColor: 'green' }]}
+                onPress={() => handleMoodChange('happy')}
+              >
+                <Icon name="smile-o" size={60} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, mood === 'neutral' ? styles.selected : null, { backgroundColor: 'grey' }]}
+                onPress={() => handleMoodChange('neutral')}
+              >
+                <Icon name="meh-o" size={60} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, mood === 'sad' ? styles.selected : null, { backgroundColor: 'blue' }]}
+                onPress={() => handleMoodChange('sad')}
+              >
+                <Icon name="frown-o" size={60} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.text}>You selected: {mood}</Text>
+
+            {/* Save Data button */}
+            <TouchableOpacity style={styles.saveButton} onPress={saveData}>
+              <Text style={styles.saveButtonText}>Save Data</Text>
+            </TouchableOpacity> 
+
+
+            {/* <Text style={styles.text}>How are you feeling today?</Text>
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: "green" }]}
@@ -486,8 +533,11 @@ const HomeScreen = ({email}) => {
               >
                 <Icon name="frown-o" size={60} color="#fff" />
               </TouchableOpacity>
-            </View>
-            <Text style={styles.text}>You selected: {mood}</Text>
+              <Button title="Save" onPress={saveData} />
+            </View> */}
+
+            
+            
           </View>
           <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { model: model })}>
           <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
@@ -513,6 +563,10 @@ const SignInScreen = ({
     try {
       const result = await signInWithGoogle();
       console.log('Signed in with Google!');
+      // Log an event using Firebase Analytics
+      await analytics().logEvent('signed_in_with_google', {
+        email: result.user.email,
+      });    
       onSignIn(result.user.email);
     } catch (e) {
       alert('Authentication failed, please try again.');
@@ -630,7 +684,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#4285F4',
     padding: 10,
     borderRadius: 5,
-  },  
+  }, 
+  smileyContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  selected: {
+    borderWidth: 2,
+    borderColor: 'purple',
+    borderRadius: 50, // Adjust this value based on your smiley face size
+  },
+  saveButton: {
+    backgroundColor: 'blue',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  }, 
 });
 
 export default App;
