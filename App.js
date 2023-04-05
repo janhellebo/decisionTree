@@ -68,8 +68,6 @@ const HomeScreen = ({email}) => {
   const [alcohol, setAlcohol] = useState('');
   // const [mood, setMood] = useState(5);
   const [mood, setMood] = useState(null);
-  const [selectedMood, setSelectedMood] = useState(null);
-
   const [syntheticData, setSyntheticData] = useState([]);
 
 
@@ -93,84 +91,8 @@ const HomeScreen = ({email}) => {
     setMood(value);
   };
 
-  // const handleMoodSelection = (mood) => {
-  //   setSelectedMood(mood);
-  // };
 
-  // const saveData = async () => {
-  //   try {
-  //     await AsyncStorage.setItem('steps', steps);
-  //     await AsyncStorage.setItem('sleep', sleep.toString());
-  //     await AsyncStorage.setItem('water', water);
-  //     await AsyncStorage.setItem('alchohol', alcohol);
-  //     await AsyncStorage.setItem('mood', mood.toString());
-  //     alert('Data saved successfully!');
-  //   } catch (error) {
-  //     alert(error.message);
-  //   }
-  // };
-
-  // // SaveData using addDoc
-  // const saveData = () => {
-  //   try {
-  //     console.log('1. Saving data...');
-  //     const usersCollection = collection(db, 'users');
-  //     console.log('2. Collection reference:', usersCollection);
   
-  //     console.log('3. Adding document...');
-  
-  //     const data = {
-  //       steps: steps,
-  //       sleep: sleep,
-  //       water: water,
-  //       alcohol: alcohol,
-  //       mood: mood,
-  //     };
-  
-  //     console.log('Data to save:', data);
-  
-  //     addDoc(usersCollection, data)
-  //       .then((docRef) => {
-  //         console.log('4. Data saved successfully with ID:', docRef.id);
-  //         alert('Data saved successfully!');
-  //       })
-  //       .catch((addDocError) => {
-  //         console.error('Error adding document:', addDocError);
-  //         alert(addDocError.message);
-  //       });
-  
-  //   } catch (error) {
-  //     console.error('Error saving data:', error);
-  //     alert(error.message);
-  //   }
-  // };
-  
-  // // SaveData using setDoc
-  // const saveData = async () => {
-  //   try {
-  //     console.log('1. Saving data...');
-  //     const usersCollection = collection(db, 'users');
-  //     console.log('2. Collection reference:', usersCollection);
-  
-  //     const userRef = doc(usersCollection);
-  //     console.log('3. User reference:', userRef);
-  
-  //     await setDoc(userRef, {
-  //       steps: steps,
-  //       sleep: sleep,
-  //       water: water,
-  //       alcohol: alcohol,
-  //       mood: mood,
-  //     });
-  
-  //     console.log('4. Data saved successfully');
-  //     alert('Data saved successfully!');
-  //   } catch (error) {
-  //     console.error('Error saving data:', error);
-  //     alert(error.message);
-  //   }
-  // };
-
   const saveData = async () => {
     try {
       console.log('1. Saving data...');
@@ -180,30 +102,33 @@ const HomeScreen = ({email}) => {
       // Get the current date as a string in the format 'YYYY-MM-DD'
       const currentDate = new Date();
       const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
-  
+      // const tempDate = '2023-3-29';
+
       // Combine the user's ID with the date to create a unique document ID
       const uniqueDocId = `${email}_${dateId}`;
+      // const uniqueDocId = `${email}_${tempDate}`;
+
   
       const userRef = await usersCollection.doc(uniqueDocId);
       console.log('3. User reference:', userRef);
   
-      await userRef.set ({
-        steps: steps,
+      await userRef.set({
+        steps: parseFloat(steps),
         sleep: sleep,
-        exercise: exercise,
-        alcohol: alcohol,
+        exercise: parseFloat(exercise),
+        alcohol: parseFloat(alcohol),
         mood: mood,
       });
   
       console.log('4. Data saved successfully');
       // Log an event using Firebase Analytics
       await analytics().logEvent('data_saved', {
-        steps: steps,
+        steps: parseFloat(steps),
         sleep: sleep,
-        exercise: exercise,
-        alcohol: alcohol,
+        exercise: parseFloat(exercise),
+        alcohol: parseFloat(alcohol),
         mood: mood,
-      });    
+      });  
       alert('Data saved successfully!');
     } catch (error) {
       console.error('Error saving data:', error);
@@ -230,19 +155,6 @@ const HomeScreen = ({email}) => {
     }
   };
 
-  // const getData = async () => {
-  //   try {
-  //     const value = await AsyncStorage.getItem("@mood_value");
-  //     if (value !== null) {
-  //       // value previously stored
-  //       return value;
-  //     }
-  //   } catch (e) {
-  //     // error reading value
-  //   }
-  // };
-
-
   const generateSyntheticData = (numDays) => {
     const syntheticData = [];
   
@@ -250,7 +162,7 @@ const HomeScreen = ({email}) => {
       const dayData = {
         steps: Math.floor(Math.random() * 20000), // Random step count between 0 and 20000
         sleep: parseFloat((Math.random() * 14).toFixed(1)), // Random hours of sleep between 0 and 14 (with 1 decimal)
-        exercise: parseFloat(Math.random() * 60), // Random exercise duration between 0 and 60 minutes
+        exercise: Math.floor(Math.random() * 60), // Random exercise duration between 0 and 60 minutes
         alcohol: parseFloat((Math.random() * 10).toFixed(1)), // Random alcohol intake between 0 and 10 units (with 1 decimal)
         mood: Math.floor(Math.random() * 3) , // Random mood rating between 0 and 2
       };
@@ -272,57 +184,11 @@ const HomeScreen = ({email}) => {
   const syntheticTrainData = allSyntheticData.slice(0, splitIndex);
   const syntheticTestData = allSyntheticData.slice(splitIndex);
 
-  
-  // Iris
-  // var iris = require('js-datasets-iris');
-
-  // //create test dataset
-  // var irisTest = new Array();
-
-  // for (let i=0; i<10; i++){
-  //   irisTest.push(iris.data[i]);
-  //   irisTest.push(iris.data[i+50]);
-  //   irisTest.push(iris.data[i+100]);
-  // }
-
-  // //create training dataset
-  // var irisTrain = new Array();
-
-  // for (let i=0; i<40; i++){
-  //   irisTrain.push(iris.data[i+10]);
-  //   irisTrain.push(iris.data[i+60]);
-  //   irisTrain.push(iris.data[i+110]);
-  // }
-
-
-  //chatGPT
-  //converting array of values into array of objects
-
-  // const keys = ["x1", "x2", "x3", "x4", "species"];
-
   const keys = ["steps", "sleep", "exercise", "alcohol", "mood"];
 
 
-  // const irisTestObj = irisTest.map((value) => {
-  //   return value.reduce((acc, item, index) => {
-  //     acc[keys[index]] = item;
-  //     return acc;
-  //   }, {});
-  // });
-
-  // const irisTrainObj = irisTrain.map((value) => {
-  //   return value.reduce((acc, item, index) => {
-  //     acc[keys[index]] = item;
-  //     return acc;
-  //   }, {});
-  // });
-
 
   //creating tree using training data
-
-  // Iris
-  // const model = new DecisionTree('species', ['x1', 'x2', 'x3', 'x4'], irisTrainObj);
-
   const model = new DecisionTree("mood", ["steps", "sleep", "exercise", "alcohol"], syntheticTrainData);
 
 
@@ -334,30 +200,10 @@ const HomeScreen = ({email}) => {
   var correct = 0;
   var wrong = 0;
 
-  // Iris
-  // for (let i = 0; i < 30; i++){
-  //   let X1 = irisTestObj[i]["x1"]
-  //   let X2 = irisTestObj[i]["x2"]
-  //   let X3 = irisTestObj[i]["x3"]
-  //   let X4 = irisTestObj[i]["x4"]
-  //   let Y = irisTestObj[i]["species"]
-
-  //   let pred = Object.keys(model.classify({"x1":X1, "x2": X2, "x3":X3, "x4": X4}))
-
-  //   if (pred == Y){
-  //     correct++;
-  //   }
-  //   else {
-  //     wrong++;
-  //   }
-  // }
-
-
-
   for (let i = 0; i < syntheticTestData.length; i++) {
     let steps = syntheticTestData[i]["steps"];
     let sleep = syntheticTestData[i]["sleep"];
-    let water = syntheticTestData[i]["exercise"];
+    let exercise = syntheticTestData[i]["exercise"];
     let alcohol = syntheticTestData[i]["alcohol"];
     let actualMood = syntheticTestData[i]["mood"];
 
@@ -369,8 +215,6 @@ const HomeScreen = ({email}) => {
       wrong++;
     }
   }
-
-
 
   result = correct / (correct + wrong);
 
@@ -396,8 +240,8 @@ const HomeScreen = ({email}) => {
     'alcohol consumption': 2,
   };
   
-  const testSummary = model.generateSummary(input);
-  console.warn(testSummary);
+  // const testSummary = model.generateSummary(input);
+  // console.warn(testSummary);
 
 
   return (
@@ -423,7 +267,7 @@ const HomeScreen = ({email}) => {
               </Text>
               {syntheticData.slice(0, 10).map((data, index) => ( // Display first 10 records
                 <Text key={index}>
-                  Day {index + 1}: Steps: {data.steps}, Sleep: {data.sleep}, Water: {data.water}, Alcohol: {data.alcohol}, Mood: {data.mood}
+                  Day {index + 1}: Steps: {data.steps}, Sleep: {data.sleep}, Exercise: {data.exercise}, Alcohol: {data.alcohol}, Mood: {data.mood}
                 </Text>
               ))}
             </View>
@@ -440,7 +284,7 @@ const HomeScreen = ({email}) => {
               style={styles.slider}
               minimumValue={0}
               maximumValue={14}
-              step={1}
+              step={0.25}
               value={sleep}
               onValueChange={handleSleepChange}
               // onSlidingComplete={saveData}
@@ -461,36 +305,26 @@ const HomeScreen = ({email}) => {
               onChangeText={handleAlcoholChange}
               // onSubmitEditing={saveData}
             />
-            {/* <Text style={styles.text}>Rate your mood: {mood}</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              value={mood}
-              onValueChange={handleMoodChange}
-              onSlidingComplete={saveData}
-            />     */}
             {/* Mood question */}
             <Text style={styles.text}>How are you feeling today?</Text>
 
             {/* Smiley face buttons */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
-                style={[styles.button, mood === 'happy' ? styles.selected : null, { backgroundColor: 'green' }]}
-                onPress={() => handleMoodChange('happy')}
+                style={[styles.button, mood === 'Happy' ? styles.selected : null, { backgroundColor: 'green' }]}
+                onPress={() => handleMoodChange('Happy')}
               >
                 <Icon name="smile-o" size={60} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, mood === 'neutral' ? styles.selected : null, { backgroundColor: 'grey' }]}
-                onPress={() => handleMoodChange('neutral')}
+                style={[styles.button, mood === 'Neutral' ? styles.selected : null, { backgroundColor: 'grey' }]}
+                onPress={() => handleMoodChange('Neutral')}
               >
                 <Icon name="meh-o" size={60} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, mood === 'sad' ? styles.selected : null, { backgroundColor: 'blue' }]}
-                onPress={() => handleMoodChange('sad')}
+                style={[styles.button, mood === 'Low mood' ? styles.selected : null, { backgroundColor: 'blue' }]}
+                onPress={() => handleMoodChange('Low mood')}
               >
                 <Icon name="frown-o" size={60} color="#fff" />
               </TouchableOpacity>
@@ -502,57 +336,13 @@ const HomeScreen = ({email}) => {
             <TouchableOpacity style={styles.saveButton} onPress={saveData}>
               <Text style={styles.saveButtonText}>Save Data</Text>
             </TouchableOpacity> 
-
-
-            {/* <Text style={styles.text}>How are you feeling today?</Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: "green" }]}
-                onPress={() => {
-                  setMood("happy");
-                  saveData();
-                }}
-              >
-                <Icon name="smile-o" size={60} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: "grey" }]}
-                onPress={() => {
-                  setMood("neutral");
-                  saveData();
-                }}
-              >
-                <Icon name="meh-o" size={60} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: "blue" }]}
-                onPress={() => {
-                  setMood("sad");
-                  saveData();
-                }}
-              >
-                <Icon name="frown-o" size={60} color="#fff" />
-              </TouchableOpacity>
-              <Button title="Save" onPress={saveData} />
-            </View> */}
-
-            
-            
           </View>
           <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { model: model })}>
           <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity onPress={handleSummary}>
-           <Text>Mood summary</Text>
-          </TouchableOpacity>
-          <Text>{summary}</Text> */}
         </ScrollView>
       </View>
     </SafeAreaView>
-
-  
-  
-
   );
 };
 
@@ -622,12 +412,12 @@ const styles = StyleSheet.create({
     // width: '100%',
   },
   scrollViewContent: {
-    flexGrow: 1, // Add this line
+    flexGrow: 1, 
   },
   contentWrapper: {
-    alignItems: 'center', // Add this line
-    justifyContent: 'center', // Add this line
-    width: '100%', // Add this line
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    width: '100%', 
   },
   text: {
     fontSize: 20,
@@ -642,7 +432,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: 'black',
     borderWidth: 1, 
-    borderRadius: 10, // Add rounded edges
+    borderRadius: 10, 
     padding: 10,
   },
   buttonContainer: {
@@ -668,7 +458,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  // Add styles for the sign-in screen
   signInContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -694,7 +483,7 @@ const styles = StyleSheet.create({
   selected: {
     borderWidth: 2,
     borderColor: 'purple',
-    borderRadius: 50, // Adjust this value based on your smiley face size
+    borderRadius: 50, 
   },
   saveButton: {
     backgroundColor: 'blue',

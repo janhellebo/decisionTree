@@ -8,7 +8,7 @@ const PredictMoodScreen = ({ route }) => {
 
   const [steps, setSteps] = useState('');
   const [sleep, setSleep] = useState(7);
-  const [water, setWater] = useState('');
+  const [exercise, setExercise] = useState('');
   const [alcohol, setAlcohol] = useState('');
 
   const handleStepsChange = (text) => {
@@ -19,8 +19,8 @@ const PredictMoodScreen = ({ route }) => {
     setSleep(value);
   };
 
-  const handleWaterChange = (text) => {
-    setWater(text);
+  const handleExerciseChange = (text) => {
+    setExercise(text);
   };
 
   const handleAlcoholChange = (text) => {
@@ -32,9 +32,9 @@ const PredictMoodScreen = ({ route }) => {
   const predictMood = () => {
     // const prediction = model.classify({ "steps": steps, "sleep": sleep, "water": water, "alcohol": alcohol });
     const prediction = model.classify({
-        "steps": parseInt(steps),
+        "steps": parseFloat(steps),
         "sleep": sleep,
-        "water": parseFloat(water),
+        "exercise": parseFloat(exercise),
         "alcohol": parseFloat(alcohol)
       }); 
     const predictedMood = Object.keys(prediction)[0];
@@ -58,16 +58,16 @@ const PredictMoodScreen = ({ route }) => {
               style={styles.slider}
               minimumValue={0}
               maximumValue={14}
-              step={1}
+              step={0.25}
               value={sleep}
               onValueChange={handleSleepChange}
             />
-            <Text style={styles.text}>Water: {water} litres</Text>
+            <Text style={styles.text}>Exercise: {exercise} minutes</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter amount of water drank in litres"
-              value={water}
-              onChangeText={handleWaterChange}
+              placeholder="Enter amount of exercise done in minutes"
+              value={exercise}
+              onChangeText={handleExerciseChange}
             />
             <Text style={styles.text}>Units of alcohol: {alcohol} units</Text>
             <TextInput
