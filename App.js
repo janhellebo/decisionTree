@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DecisionTree from './decision-tree';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground } from 'react-native';
 import { trainingData, testData } from './data/treeData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider'
@@ -93,23 +93,66 @@ const HomeScreen = ({email}) => {
 
 
   
+  // const saveData = async () => {
+  //   try {
+  //     console.log('1. Saving data...');
+  //     const usersCollection = firestore().collection('users');
+  //     console.log('2. Collection reference:', usersCollection);
+  
+  //     // Get the current date as a string in the format 'YYYY-MM-DD'
+  //     const currentDate = new Date();
+  //     const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+  //     // const tempDate = '2023-3-29';
+
+  //     // Combine the user's ID with the date to create a unique document ID
+  //     const uniqueDocId = `${email}_${dateId}`;
+  //     // const uniqueDocId = `${email}_${tempDate}`;
+
+  
+  //     const userRef = await usersCollection.doc(uniqueDocId);
+  //     console.log('3. User reference:', userRef);
+  
+  //     await userRef.set({
+  //       steps: parseFloat(steps),
+  //       sleep: sleep,
+  //       exercise: parseFloat(exercise),
+  //       alcohol: parseFloat(alcohol),
+  //       mood: mood,
+  //     });
+  
+  //     console.log('4. Data saved successfully');
+  //     // Log an event using Firebase Analytics
+  //     await analytics().logEvent('data_saved', {
+  //       steps: parseFloat(steps),
+  //       sleep: sleep,
+  //       exercise: parseFloat(exercise),
+  //       alcohol: parseFloat(alcohol),
+  //       mood: mood,
+  //     });  
+  //     alert('Data saved successfully!');
+  //   } catch (error) {
+  //     console.error('Error saving data:', error);
+  //     alert(error.message);
+  //   }
+  // };
+  
+  
   const saveData = async () => {
     try {
       console.log('1. Saving data...');
-      const usersCollection = firestore().collection('users');
-      console.log('2. Collection reference:', usersCollection);
+      const userCollection = firestore().collection(email);
+      console.log('2. Collection reference:', userCollection);
   
       // Get the current date as a string in the format 'YYYY-MM-DD'
       const currentDate = new Date();
       const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
       // const tempDate = '2023-3-29';
-
+  
       // Combine the user's ID with the date to create a unique document ID
       const uniqueDocId = `${email}_${dateId}`;
       // const uniqueDocId = `${email}_${tempDate}`;
-
   
-      const userRef = await usersCollection.doc(uniqueDocId);
+      const userRef = await userCollection.doc(uniqueDocId);
       console.log('3. User reference:', userRef);
   
       await userRef.set({
@@ -128,7 +171,7 @@ const HomeScreen = ({email}) => {
         exercise: parseFloat(exercise),
         alcohol: parseFloat(alcohol),
         mood: mood,
-      });  
+      });
       alert('Data saved successfully!');
     } catch (error) {
       console.error('Error saving data:', error);
@@ -136,8 +179,6 @@ const HomeScreen = ({email}) => {
     }
   };
   
-  
-
 
   const fetchData = async () => {
     try {
@@ -365,12 +406,18 @@ const SignInScreen = ({
   };
       
   return (
-    <View style={styles.signInContainer}>
-      <Text style={styles.signInText}>Sign in with Google</Text>
-      <TouchableOpacity onPress={handleSignIn} style={styles.signInButton}>
-        <Icon name="google" size={30} color="#fff" />
-      </TouchableOpacity>
-    </View>
+    <ImageBackground
+      source={require('./WillowTree.jpg')}
+      resizeMode="cover"
+      style={styles.signInContainer}
+    > 
+      <View style={styles.signInContent}>
+        <Text style={styles.signInText}>Sign in with Google</Text>
+        <TouchableOpacity onPress={handleSignIn} style={styles.signInButton}>
+          <Icon name="google" size={30} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>   
   );
 };
 
@@ -474,6 +521,13 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
   }, 
+  signInContent: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 5,
+  },
   smileyContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
