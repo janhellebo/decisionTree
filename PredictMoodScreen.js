@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
+import firestore from '@react-native-firebase/firestore';
+
 
 const PredictMoodScreen = ({ route }) => {
   const navigation = useNavigation();
 
-  const [steps, setSteps] = useState('');
+  const [steps, setSteps] = useState('0');
   const [sleep, setSleep] = useState(7);
-  const [exercise, setExercise] = useState('');
-  const [alcohol, setAlcohol] = useState('');
+  const [exercise, setExercise] = useState('0');
+  const [alcohol, setAlcohol] = useState('0');
+  const [predictedMood, setPredictedMood] = useState('');
+
 
   const handleStepsChange = (text) => {
     setSteps(text);
@@ -27,7 +31,32 @@ const PredictMoodScreen = ({ route }) => {
     setAlcohol(text);
   };
 
-  const { model } = route.params;
+  const { email, model } = route.params;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const currentDate = new Date();
+        const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+        const uniqueDocId = `${email}_${dateId}`;
+        const userRef = firestore().collection(email).doc(uniqueDocId);
+        const doc = await userRef.get();
+
+        if (doc.exists) {
+          const data = doc.data();
+          setSteps(data.steps.toString());
+          setSleep(data.sleep);
+          setExercise(data.exercise.toString());
+          setAlcohol(data.alcohol.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
 
   const predictMood = () => {
     // const prediction = model.classify({ "steps": steps, "sleep": sleep, "water": water, "alcohol": alcohol });
@@ -37,9 +66,14 @@ const PredictMoodScreen = ({ route }) => {
         "exercise": parseFloat(exercise),
         "alcohol": parseFloat(alcohol)
       }); 
-    const predictedMood = Object.keys(prediction)[0];
-    alert(`Predicted mood: ${predictedMood}`);
+    const mood = Object.keys(prediction)[0];
+    setPredictedMood(mood);
+    // alert(`Predicted mood: ${predictedMood}`);
   };
+
+  useEffect(() => {
+    predictMood();
+  }, [steps, sleep, exercise, alcohol]);
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -82,6 +116,9 @@ const PredictMoodScreen = ({ route }) => {
             >
               <Text style={styles.predictButtonText}>Predict Mood</Text>
             </TouchableOpacity>
+            <Text style={styles.predictedMoodText}>
+              {predictedMood && `According to your previous days of data, your predicted mood is ${predictedMood}`}
+            </Text>            
           </View>
         </ScrollView>
       </View>
@@ -145,6 +182,16 @@ const styles = StyleSheet.create({
   predictButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  predictedMoodText: {
+    marginTop: 20,
+    fontSize: 18,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderColor: 'purple',
+    borderWidth: 2,
+    borderRadius: 5,
+    textAlign: 'center',
   },
 });
 

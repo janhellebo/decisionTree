@@ -70,6 +70,7 @@ const HomeScreen = ({email}) => {
   const [mood, setMood] = useState(null);
   const [syntheticData, setSyntheticData] = useState([]);
   const [trainedModel, setTrainedModel] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
 
 
 
@@ -180,19 +181,24 @@ const HomeScreen = ({email}) => {
       const snapshot = await userCollection.get();
 
       // 3. Convert the fetched documents into an array of objects
-      const usersData = snapshot.docs.map((doc) => doc.data());
+      const usersData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
       console.log('usersData:', usersData);
+
+      const filteredUsersData = usersData.filter((doc) => doc.id !== uniqueDocId);
+
+      console.log('filteredUsersData:', filteredUsersData);
 
       // 4. Create a new decision tree using the fetched data
       const model = new DecisionTree(
         "mood",
         ["steps", "sleep", "exercise", "alcohol"],
-        usersData
+        filteredUsersData
       );
 
       // 5. Store the trained model in the state
       setTrainedModel(model);
+      setUserEmail(email);
       alert('Data saved and model trained successfully!');      
 
     } catch (error) {
@@ -400,7 +406,7 @@ const HomeScreen = ({email}) => {
               <Text style={styles.saveButtonText}>Save Data</Text>
             </TouchableOpacity> 
           </View>
-          <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { model: trainedModel })}>
+          <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { email: userEmail, model: trainedModel })}>
           <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
           </TouchableOpacity>
         </ScrollView>
