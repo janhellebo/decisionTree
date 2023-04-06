@@ -69,6 +69,8 @@ const HomeScreen = ({email}) => {
   // const [mood, setMood] = useState(5);
   const [mood, setMood] = useState(null);
   const [syntheticData, setSyntheticData] = useState([]);
+  const [trainedModel, setTrainedModel] = useState(null);
+
 
 
   const handleStepsChange = (text) => {
@@ -173,6 +175,26 @@ const HomeScreen = ({email}) => {
         mood: mood,
       });
       alert('Data saved successfully!');
+
+      // 2. Fetch all documents from the Firestore collection with the user's email
+      const snapshot = await userCollection.get();
+
+      // 3. Convert the fetched documents into an array of objects
+      const usersData = snapshot.docs.map((doc) => doc.data());
+
+      console.log('usersData:', usersData);
+
+      // 4. Create a new decision tree using the fetched data
+      const model = new DecisionTree(
+        "mood",
+        ["steps", "sleep", "exercise", "alcohol"],
+        usersData
+      );
+
+      // 5. Store the trained model in the state
+      setTrainedModel(model);
+      alert('Data saved and model trained successfully!');      
+
     } catch (error) {
       console.error('Error saving data:', error);
       alert(error.message);
@@ -180,57 +202,57 @@ const HomeScreen = ({email}) => {
   };
   
 
-  const fetchData = async () => {
-    try {
-      const userRef = await firestore().collection('users').doc('user1');
-      const doc = await userRef.get();
-      if (doc.exists) {
-        const userData = doc.data();
-        // Use userData (an object containing steps, sleep, water, alcohol, and mood) to create a new decision tree
-        // For example: createDecisionTree(userData);
-      } else {
-        console.log('No such document!');
-      }
-    } catch (error) {
-      console.log('Error getting document:', error);
-    }
-  };
+  // const fetchData = async () => {
+  //   try {
+  //     const userRef = await firestore().collection('users').doc('user1');
+  //     const doc = await userRef.get();
+  //     if (doc.exists) {
+  //       const userData = doc.data();
+  //       // Use userData (an object containing steps, sleep, water, alcohol, and mood) to create a new decision tree
+  //       // For example: createDecisionTree(userData);
+  //     } else {
+  //       console.log('No such document!');
+  //     }
+  //   } catch (error) {
+  //     console.log('Error getting document:', error);
+  //   }
+  // };
 
-  const generateSyntheticData = (numDays) => {
-    const syntheticData = [];
+  // const generateSyntheticData = (numDays) => {
+  //   const syntheticData = [];
   
-    for (let i = 0; i < numDays; i++) {
-      const dayData = {
-        steps: Math.floor(Math.random() * 20000), // Random step count between 0 and 20000
-        sleep: parseFloat((Math.random() * 14).toFixed(1)), // Random hours of sleep between 0 and 14 (with 1 decimal)
-        exercise: Math.floor(Math.random() * 60), // Random exercise duration between 0 and 60 minutes
-        alcohol: parseFloat((Math.random() * 10).toFixed(1)), // Random alcohol intake between 0 and 10 units (with 1 decimal)
-        mood: Math.floor(Math.random() * 3) , // Random mood rating between 0 and 2
-      };
-      syntheticData.push(dayData);
-    }
+  //   for (let i = 0; i < numDays; i++) {
+  //     const dayData = {
+  //       steps: Math.floor(Math.random() * 20000), // Random step count between 0 and 20000
+  //       sleep: parseFloat((Math.random() * 14).toFixed(1)), // Random hours of sleep between 0 and 14 (with 1 decimal)
+  //       exercise: Math.floor(Math.random() * 60), // Random exercise duration between 0 and 60 minutes
+  //       alcohol: parseFloat((Math.random() * 10).toFixed(1)), // Random alcohol intake between 0 and 10 units (with 1 decimal)
+  //       mood: Math.floor(Math.random() * 3) , // Random mood rating between 0 and 2
+  //     };
+  //     syntheticData.push(dayData);
+  //   }
   
-    return syntheticData;
-  };
+  //   return syntheticData;
+  // };
 
-  useEffect(() => {
-    // Generate and set the synthetic data when the component mounts
-    const allSyntheticData = generateSyntheticData(100);
-    setSyntheticData(allSyntheticData);
-  }, []);
+  // useEffect(() => {
+  //   // Generate and set the synthetic data when the component mounts
+  //   const allSyntheticData = generateSyntheticData(100);
+  //   setSyntheticData(allSyntheticData);
+  // }, []);
 
-  const allSyntheticData = generateSyntheticData(100);
+  // const allSyntheticData = generateSyntheticData(100);
 
-  const splitIndex = Math.floor(0.7 * allSyntheticData.length);
-  const syntheticTrainData = allSyntheticData.slice(0, splitIndex);
-  const syntheticTestData = allSyntheticData.slice(splitIndex);
+  // const splitIndex = Math.floor(0.7 * allSyntheticData.length);
+  // const syntheticTrainData = allSyntheticData.slice(0, splitIndex);
+  // const syntheticTestData = allSyntheticData.slice(splitIndex);
 
   const keys = ["steps", "sleep", "exercise", "alcohol", "mood"];
 
 
 
   //creating tree using training data
-  const model = new DecisionTree("mood", ["steps", "sleep", "exercise", "alcohol"], syntheticTrainData);
+  // const model = new DecisionTree("mood", ["steps", "sleep", "exercise", "alcohol"], syntheticTrainData);
 
 
   // prints the generated tree
@@ -241,21 +263,21 @@ const HomeScreen = ({email}) => {
   var correct = 0;
   var wrong = 0;
 
-  for (let i = 0; i < syntheticTestData.length; i++) {
-    let steps = syntheticTestData[i]["steps"];
-    let sleep = syntheticTestData[i]["sleep"];
-    let exercise = syntheticTestData[i]["exercise"];
-    let alcohol = syntheticTestData[i]["alcohol"];
-    let actualMood = syntheticTestData[i]["mood"];
+  // for (let i = 0; i < syntheticTestData.length; i++) {
+  //   let steps = syntheticTestData[i]["steps"];
+  //   let sleep = syntheticTestData[i]["sleep"];
+  //   let exercise = syntheticTestData[i]["exercise"];
+  //   let alcohol = syntheticTestData[i]["alcohol"];
+  //   let actualMood = syntheticTestData[i]["mood"];
 
-    let predictedMood = Object.keys(model.classify({ "steps": steps, "sleep": sleep, "exercise": exercise, "alcohol": alcohol }));
+  //   let predictedMood = Object.keys(model.classify({ "steps": steps, "sleep": sleep, "exercise": exercise, "alcohol": alcohol }));
 
-    if (predictedMood == actualMood) {
-      correct++;
-    } else {
-      wrong++;
-    }
-  }
+  //   if (predictedMood == actualMood) {
+  //     correct++;
+  //   } else {
+  //     wrong++;
+  //   }
+  // }
 
   result = correct / (correct + wrong);
 
@@ -274,12 +296,12 @@ const HomeScreen = ({email}) => {
   //   setSummary(newSummary);
   // };
 
-  const input = {
-    'step count': 6000,
-    'sleep': 6,
-    'exercise duration': 15,
-    'alcohol consumption': 2,
-  };
+  // const input = {
+  //   'step count': 6000,
+  //   'sleep': 6,
+  //   'exercise duration': 15,
+  //   'alcohol consumption': 2,
+  // };
   
   // const testSummary = model.generateSummary(input);
   // console.warn(testSummary);
@@ -290,7 +312,7 @@ const HomeScreen = ({email}) => {
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <View style={styles.contentWrapper}>
-            <View style={{
+            {/* <View style={{
                           borderWidth: 2, borderColor: 'blue',
                           borderRadius: 10, backgroundColor: 'white',
                           padding: 5}}>
@@ -311,7 +333,7 @@ const HomeScreen = ({email}) => {
                   Day {index + 1}: Steps: {data.steps}, Sleep: {data.sleep}, Exercise: {data.exercise}, Alcohol: {data.alcohol}, Mood: {data.mood}
                 </Text>
               ))}
-            </View>
+            </View> */}
             <Text style={styles.text}>Step count: {steps}</Text>
             <TextInput
               style={styles.input}
@@ -378,7 +400,7 @@ const HomeScreen = ({email}) => {
               <Text style={styles.saveButtonText}>Save Data</Text>
             </TouchableOpacity> 
           </View>
-          <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { model: model })}>
+          <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { model: trainedModel })}>
           <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
           </TouchableOpacity>
         </ScrollView>
