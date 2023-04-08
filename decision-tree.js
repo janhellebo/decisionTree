@@ -247,90 +247,159 @@ class DecisionTree {
     }, '');
   }
 
+  // Best Summary so far
+  generateSummary(currentMood, userInput) {
+    const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
+    let bestPath = null;
 
-  // Jan Hellebo summary code
-
-  // generateSummary(input) {
-  //   const summary = this._generateSummaryHelper(this.decisionTree, input);
-  //   return `Based on your existing data, ${summary.join(" and ")} will improve your mood by one level.`;
-  // }
+    if (currentMood === targetMood) {
+      return `You're on the right track! No additional changes needed to maintain ${currentMood} mood.`;
+    }
   
-  // _generateSummaryHelper(node, input) {
-  //   if (node instanceof Leaf) {
-  //     return [];
+    const _findPath = (node, targetMood, currentPath) => {
+      if (node instanceof Leaf) {
+        if (node.predictions.hasOwnProperty(targetMood)) {
+          if (!bestPath || currentPath.length < bestPath.length) {
+            bestPath = currentPath;
+          }
+        }
+        return;
+      }
+      _findPath(node.trueBranch, targetMood, [...currentPath, { question: node.question, value: true }]);
+      _findPath(node.falseBranch, targetMood, [...currentPath, { question: node.question, value: false }]);
+    };
+  
+    _findPath(this.decisionTree, targetMood, []);
+  
+    if (!bestPath) {
+      return `No advice available to improve your mood to ${targetMood}.`;
+    }
+  
+    let summary = `To improve your mood to ${targetMood}:`;
+    let adviceIndex = 1;
+    bestPath.forEach((step) => {
+      const condition = step.value ? 'increase' : 'decrease';
+      const column = step.question.column;
+      const adviceValue = step.question.value;
+  
+      if ((condition === 'increase' && userInput[column] < adviceValue) ||
+          (condition === 'decrease' && userInput[column] > adviceValue)) {
+        summary += ` ${adviceIndex}. ${condition} ${column} to ${adviceValue};`;
+        adviceIndex++;
+      }
+    });
+  
+    if (adviceIndex === 1) {
+      summary = `You're on the right track! No additional changes needed to reach ${targetMood} mood.`;
+    }
+  
+    return summary;
+  }
+  
+  
+  
+
+
+  // generateSummary(currentMood, userInput) {
+  //   const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
+  //   let bestPath = null;
+
+  //   if (currentMood === targetMood) {
+  //     return `You're on the right track! No additional changes needed to maintain ${currentMood} mood.`;
+  //   }    
+  
+  //   const _findPath = (node, targetMood, currentPath) => {
+  //     if (node instanceof Leaf) {
+  //       if (node.predictions.hasOwnProperty(targetMood)) {
+  //         if (!bestPath || currentPath.length < bestPath.length) {
+  //           bestPath = currentPath;
+  //         }
+  //       }
+  //       return;
+  //     }
+  //     _findPath(node.trueBranch, targetMood, [...currentPath, { question: node.question, value: true }]);
+  //     _findPath(node.falseBranch, targetMood, [...currentPath, { question: node.question, value: false }]);
+  //   };
+  
+  //   _findPath(this.decisionTree, targetMood, []);
+  
+  //   if (!bestPath) {
+  //     return `No advice available to improve your mood to ${targetMood}.`;
   //   }
   
-  //   const feature = node.question.column;
-  //   const threshold = node.question.value;
-  //   const inputValue = input[feature];
+  //   let summary = `To improve your mood to ${targetMood}:`;
+  //   let adviceIndex = 1;
+  //   bestPath.forEach((step) => {
+  //     const condition = step.value ? 'increase' : 'decrease';
+  //     const column = step.question.column;
+  //     const adviceValue = step.question.value;
   
-  //   let summary = [];
+  //     if ((condition === 'increase' && userInput[column] < adviceValue) ||
+  //         (condition === 'decrease' && userInput[column] > adviceValue)) {
+  //       summary += ` ${adviceIndex}. ${condition} ${column} to ${adviceValue};`;
+  //       adviceIndex++;
+  //     }
+  //   });
   
-  //   if (inputValue < threshold) {
-  //     summary.push(`increasing your ${feature} to at least ${threshold}`);
-  //   } else if (feature === "alcohol consumption" && inputValue >= threshold) {
-  //     summary.push(`reducing your ${feature} to less than ${threshold}`);
-  //   }
-  
-  //   if (node.question.match(input)) {
-  //     summary = summary.concat(this._generateSummaryHelper(node.trueBranch, input));
-  //   } else {
-  //     summary = summary.concat(this._generateSummaryHelper(node.falseBranch, input));
+  //   if (adviceIndex === 1) {
+  //     summary = `You're on the right track! No additional changes needed to reach ${targetMood} mood.`;
   //   }
   
   //   return summary;
   // }
 
-  _generateSummaryHelper(node, input) {
-    if (node instanceof Leaf) {
-      return [];
-    }
+  // generateSummary(currentMood, userInput) {
+  //   const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
+  //   let paths = [];
   
-    const feature = node.question.column;
-    const threshold = node.question.value;
-    const inputValue = input[feature];
+  //   const _findPath = (node, targetMood, currentPath) => {
+  //     if (node instanceof Leaf) {
+  //       if (node.predictions.hasOwnProperty(targetMood)) {
+  //         paths.push(currentPath);
+  //       }
+  //       return;
+  //     }
+  //     _findPath(node.trueBranch, targetMood, [...currentPath, { question: node.question, value: true }]);
+  //     _findPath(node.falseBranch, targetMood, [...currentPath, { question: node.question, value: false }]);
+  //   };
   
-    let summary = [];
+  //   _findPath(this.decisionTree, targetMood, []);
   
-    const units = {
-      'step count': 'steps',
-      'sleep': 'hours',
-      'water consumption': 'liters',
-      'alcohol consumption': 'units',
-    };
+  //   if (paths.length === 0) {
+  //     return `No advice available to improve your mood to ${targetMood}.`;
+  //   }
   
-    if (inputValue < threshold) {
-      const summaryText = `increasing your ${feature} to at least ${threshold} ${units[feature]}`;
-      summary.push({ feature, threshold, summaryText });
-    } else if (feature === "alcohol consumption" && inputValue >= threshold) {
-      const summaryText = `reducing your ${feature} to less than ${threshold} ${units[feature]}`;
-      summary.push({ feature, threshold, summaryText });
-    }
+  //   // Sort paths by their length
+  //   paths.sort((a, b) => a.length - b.length);
   
-    const childSummary = node.question.match(input)
-      ? this._generateSummaryHelper(node.trueBranch, input)
-      : this._generateSummaryHelper(node.falseBranch, input);
+  //   let summary = `To improve your mood to ${targetMood}:`;
   
-    childSummary.forEach(child => {
-      const existing = summary.find(s => s.feature === child.feature);
-      if (existing) {
-        if (child.threshold > existing.threshold) {
-          existing.threshold = child.threshold;
-          existing.summaryText = child.summaryText;
-        }
-      } else {
-        summary.push(child);
-      }
-    });
+  //   // Select the shortest path to the target mood
+  //   const shortestPath = paths[0];
   
-    return summary;
-  }
+  //   let adviceIndex = 1;
+  //   shortestPath.forEach((step) => {
+  //     const condition = step.value ? 'increase' : 'decrease';
+  //     const column = step.question.column;
+  //     const adviceValue = step.question.value;
   
-  generateSummary(input) {
-    const summaryObjects = this._generateSummaryHelper(this.decisionTree, input);
-    const summary = summaryObjects.map(s => s.summaryText);
-    return `Based on your existing data, ${summary.join(" and ")} will improve your mood by one level.`;
-  }
+  //     if ((condition === 'increase' && userInput[column] < adviceValue) ||
+  //         (condition === 'decrease' && userInput[column] > adviceValue)) {
+  //       summary += ` ${adviceIndex}. ${condition} ${column} to ${adviceValue};`;
+  //       adviceIndex++;
+  //     }
+  //   });
+  
+  //   if (adviceIndex === 1) {
+  //     summary = `You're on the right track! No additional changes needed to reach ${targetMood} mood.`;
+  //   }
+  
+  //   return summary;
+  // }
+  
+  
+  
+  
 
 }
 
@@ -435,5 +504,5 @@ function isNumeric(value) {
 
 module.exports = DecisionTree;
 
-module.exports.generateSummary = DecisionTree.prototype.generateSummary;
+// module.exports.generateSummary = DecisionTree.prototype.generateSummary;
 
