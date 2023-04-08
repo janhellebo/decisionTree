@@ -44,6 +44,18 @@ const PredictMoodScreen = ({ route }) => {
     setHelpModalVisible(!helpModalVisible);
   };
 
+  const logHelpModalPress = async () => {
+    await analytics().logEvent('help_modal_press_predict', {
+      email,
+    });
+    console.log('Help modal pressed on predict screen');
+  };
+
+  const handleHelpButtonPress = () => {
+    toggleHelpModal();
+    logHelpModalPress();
+  };  
+
   const { email, model } = route.params;
 
 
@@ -150,7 +162,7 @@ const PredictMoodScreen = ({ route }) => {
     <SafeAreaView style={styles.safeAreaContainer}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={toggleHelpModal} style={styles.helpButton}>
+          <TouchableOpacity onPress={handleHelpButtonPress} style={styles.helpButton}>
             <Text style={styles.helpText}>Help</Text>
             <Text style={styles.helpIcon}>?</Text>
           </TouchableOpacity>

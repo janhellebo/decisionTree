@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DecisionTree from './decision-tree';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground, Modal, TouchableWithoutFeedback } from 'react-native';
 import { trainingData, testData } from './data/treeData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider'
@@ -71,6 +71,7 @@ const HomeScreen = ({email}) => {
   const [syntheticData, setSyntheticData] = useState([]);
   const [trainedModel, setTrainedModel] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
+  const [helpModalVisible, setHelpModalVisible] = useState(false);
 
 
 
@@ -94,6 +95,21 @@ const HomeScreen = ({email}) => {
     setMood(value);
   };
 
+  const toggleHelpModal = () => {
+    setHelpModalVisible(!helpModalVisible);
+  };
+
+  const logHelpModalPress = async () => {
+    await analytics().logEvent('help_modal_press_home', {
+      email,
+    });
+    console.log('Logged help modal press (home screen) event');
+  };
+
+  const handleHelpButtonPress = () => {
+    toggleHelpModal();
+    logHelpModalPress();
+  };  
 
   
   // const saveData = async () => {
@@ -316,6 +332,12 @@ const HomeScreen = ({email}) => {
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
       <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleHelpButtonPress} style={styles.helpButton}>
+            <Text style={styles.helpText}>Help</Text>
+            <Text style={styles.helpIcon}>?</Text>
+          </TouchableOpacity>
+        </View>
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <View style={styles.contentWrapper}>
             {/* <View style={{
@@ -410,6 +432,22 @@ const HomeScreen = ({email}) => {
           <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
           </TouchableOpacity>
         </ScrollView>
+        <Modal
+          animationType="fade"
+          transparent
+          visible={helpModalVisible}
+          onRequestClose={toggleHelpModal}
+        >
+          <TouchableWithoutFeedback onPress={toggleHelpModal}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalText}>
+                  Now adjust the values to see how your predicted mood changes with different habits!
+                </Text>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -576,6 +614,39 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  header: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 10,
+    paddingTop: 5,
+  },
+  helpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  helpText: {
+    fontSize: 18,
+    color: 'grey',
+  },
+  helpIcon: {
+    fontSize: 22,
+    color: 'grey',
+    marginLeft: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+  },
+  modalText: {
+    fontSize: 18,
   }, 
 });
 
