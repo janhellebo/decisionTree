@@ -11,8 +11,6 @@ import PredictMoodScreen from './PredictMoodScreen';
 import { useNavigation } from '@react-navigation/native';
 import {generateSummary} from './decision-tree';
 
-// import { db } from './firebaseConfig';
-
 import firestore from '@react-native-firebase/firestore';
 
 import { addDoc, collection, doc, setDoc } from '@react-native-firebase/firestore';
@@ -72,6 +70,9 @@ const HomeScreen = ({email}) => {
   const [trainedModel, setTrainedModel] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
   const [helpModalVisible, setHelpModalVisible] = useState(false);
+  const [isDataSavedToday, setIsDataSavedToday] = useState(false);
+  const [totalDataDays, setTotalDataDays] = useState(0);
+  const [daysMessage, setDaysMessage] = useState('Please enter and save your data!'); 
 
 
 
@@ -111,223 +112,115 @@ const HomeScreen = ({email}) => {
     logHelpModalPress();
   };  
 
-  
-  // const saveData = async () => {
-  //   try {
-  //     console.log('1. Saving data...');
-  //     const usersCollection = firestore().collection('users');
-  //     console.log('2. Collection reference:', usersCollection);
-  
-  //     // Get the current date as a string in the format 'YYYY-MM-DD'
-  //     const currentDate = new Date();
-  //     const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
-  //     // const tempDate = '2023-3-29';
+  const decimalHoursToHoursMinutes = (decimalHours) => {
+    const hours = Math.floor(decimalHours);
+    const minutes = (decimalHours - hours) * 60;
+    return `${hours} hours ${Math.round(minutes)} mins`;
+  };  
 
-  //     // Combine the user's ID with the date to create a unique document ID
-  //     const uniqueDocId = `${email}_${dateId}`;
-  //     // const uniqueDocId = `${email}_${tempDate}`;
-
-  
-  //     const userRef = await usersCollection.doc(uniqueDocId);
-  //     console.log('3. User reference:', userRef);
-  
-  //     await userRef.set({
-  //       steps: parseFloat(steps),
-  //       sleep: sleep,
-  //       exercise: parseFloat(exercise),
-  //       alcohol: parseFloat(alcohol),
-  //       mood: mood,
-  //     });
-  
-  //     console.log('4. Data saved successfully');
-  //     // Log an event using Firebase Analytics
-  //     await analytics().logEvent('data_saved', {
-  //       steps: parseFloat(steps),
-  //       sleep: sleep,
-  //       exercise: parseFloat(exercise),
-  //       alcohol: parseFloat(alcohol),
-  //       mood: mood,
-  //     });  
-  //     alert('Data saved successfully!');
-  //   } catch (error) {
-  //     console.error('Error saving data:', error);
-  //     alert(error.message);
-  //   }
-  // };
-  
-  
-  const saveData = async () => {
-    try {
-      console.log('1. Saving data...');
-      const userCollection = firestore().collection(email);
-      console.log('2. Collection reference:', userCollection);
-  
-      // Get the current date as a string in the format 'YYYY-MM-DD'
-      const currentDate = new Date();
-      const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
-      // const tempDate = '2023-3-29';
-  
-      // Combine the user's ID with the date to create a unique document ID
-      const uniqueDocId = `${email}_${dateId}`;
-      // const uniqueDocId = `${email}_${tempDate}`;
-  
-      const userRef = await userCollection.doc(uniqueDocId);
-      console.log('3. User reference:', userRef);
-  
-      await userRef.set({
-        steps: parseFloat(steps),
-        sleep: sleep,
-        exercise: parseFloat(exercise),
-        alcohol: parseFloat(alcohol),
-        mood: mood,
-      });
-  
-      console.log('4. Data saved successfully');
-      // Log an event using Firebase Analytics
-      await analytics().logEvent('data_saved', {
-        steps: parseFloat(steps),
-        sleep: sleep,
-        exercise: parseFloat(exercise),
-        alcohol: parseFloat(alcohol),
-        mood: mood,
-      });
-      alert('Data saved successfully!');
-
-      // 2. Fetch all documents from the Firestore collection with the user's email
-      const snapshot = await userCollection.get();
-
-      // 3. Convert the fetched documents into an array of objects
-      const usersData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
-      console.log('usersData:', usersData);
-
-      const filteredUsersData = usersData.filter((doc) => doc.id !== uniqueDocId);
-
-      console.log('filteredUsersData:', filteredUsersData);
-
-      // 4. Create a new decision tree using the fetched data
-      const model = new DecisionTree(
-        "mood",
-        ["steps", "sleep", "exercise", "alcohol"],
-        filteredUsersData
-      );
-
-      // 5. Store the trained model in the state
-      setTrainedModel(model);
-      setUserEmail(email);
-      alert('Data saved and model trained successfully!');      
-
-    } catch (error) {
-      console.error('Error saving data:', error);
-      alert(error.message);
-    }
+  const isNumber = (value) => {
+    return !isNaN(value) && isFinite(value);
   };
   
+  const isInputValid = (steps, sleep, exercise, alcohol, mood) => {
+    return (
+      isNumber(steps) &&
+      steps.length > 0 &&
+      isNumber(exercise) &&
+      exercise.length > 0 &&
+      isNumber(alcohol) &&
+      alcohol.length > 0 &&
+      sleep !== null &&
+      mood !== null
+    );
+  };  
 
-  // const fetchData = async () => {
-  //   try {
-  //     const userRef = await firestore().collection('users').doc('user1');
-  //     const doc = await userRef.get();
-  //     if (doc.exists) {
-  //       const userData = doc.data();
-  //       // Use userData (an object containing steps, sleep, water, alcohol, and mood) to create a new decision tree
-  //       // For example: createDecisionTree(userData);
-  //     } else {
-  //       console.log('No such document!');
-  //     }
-  //   } catch (error) {
-  //     console.log('Error getting document:', error);
-  //   }
-  // };
-
-  // const generateSyntheticData = (numDays) => {
-  //   const syntheticData = [];
+  const saveData = async () => {
+    if (isInputValid(steps, sleep, exercise, alcohol, mood)) {
+      try {
+        console.log('1. Saving data...');
+        const userCollection = firestore().collection(email);
+        console.log('2. Collection reference:', userCollection);
+    
+        // Get the current date as a string in the format 'YYYY-MM-DD'
+        const currentDate = new Date();
+        const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+        // const tempDate = '2023-3-29';
+    
+        // Combine the user's ID with the date to create a unique document ID
+        const uniqueDocId = `${email}_${dateId}`;
+        // const uniqueDocId = `${email}_${tempDate}`;
+    
+        const userRef = await userCollection.doc(uniqueDocId);
+        console.log('3. User reference:', userRef);
+    
+        await userRef.set({
+          steps: parseFloat(steps),
+          sleep: sleep,
+          exercise: parseFloat(exercise),
+          alcohol: parseFloat(alcohol),
+          mood: mood,
+        });
+    
+        console.log('4. Data saved successfully');
+        // Log an event using Firebase Analytics
+        await analytics().logEvent('data_saved', {
+          steps: parseFloat(steps),
+          sleep: sleep,
+          exercise: parseFloat(exercise),
+          alcohol: parseFloat(alcohol),
+          mood: mood,
+        });
+        alert('Data saved successfully!');
   
-  //   for (let i = 0; i < numDays; i++) {
-  //     const dayData = {
-  //       steps: Math.floor(Math.random() * 20000), // Random step count between 0 and 20000
-  //       sleep: parseFloat((Math.random() * 14).toFixed(1)), // Random hours of sleep between 0 and 14 (with 1 decimal)
-  //       exercise: Math.floor(Math.random() * 60), // Random exercise duration between 0 and 60 minutes
-  //       alcohol: parseFloat((Math.random() * 10).toFixed(1)), // Random alcohol intake between 0 and 10 units (with 1 decimal)
-  //       mood: Math.floor(Math.random() * 3) , // Random mood rating between 0 and 2
-  //     };
-  //     syntheticData.push(dayData);
-  //   }
+        // 2. Fetch all documents from the Firestore collection with the user's email
+        const snapshot = await userCollection.get();
   
-  //   return syntheticData;
-  // };
-
-  // useEffect(() => {
-  //   // Generate and set the synthetic data when the component mounts
-  //   const allSyntheticData = generateSyntheticData(100);
-  //   setSyntheticData(allSyntheticData);
-  // }, []);
-
-  // const allSyntheticData = generateSyntheticData(100);
-
-  // const splitIndex = Math.floor(0.7 * allSyntheticData.length);
-  // const syntheticTrainData = allSyntheticData.slice(0, splitIndex);
-  // const syntheticTestData = allSyntheticData.slice(splitIndex);
+        // 3. Convert the fetched documents into an array of objects
+        const usersData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  
+        console.log('usersData:', usersData);
+  
+        const filteredUsersData = usersData.filter((doc) => doc.id !== uniqueDocId);
+  
+        console.log('filteredUsersData:', filteredUsersData);
+  
+        // 4. Create a new decision tree using the fetched data
+        const model = new DecisionTree(
+          "mood",
+          ["steps", "sleep", "exercise", "alcohol"],
+          filteredUsersData
+        );
+  
+        // 5. Store the trained model in the state
+        setTrainedModel(model);
+        setUserEmail(email);
+        // alert('Data saved and model trained successfully!');     
+        
+        // Update today's data saved state
+        setIsDataSavedToday(true);
+  
+        // Update the total number of days data is saved
+        setTotalDataDays(usersData.length); 
+        
+        // Update daysMessage based on totalDataDays
+        if (usersData.length < 7) {
+          setDaysMessage(`You have submitted ${usersData.length} days of data. When you reach 7 days, you will unlock the Predict Mood screen.`);
+        } else {
+          setDaysMessage(`You have submitted ${usersData.length} days of data.`);
+        }      
+  
+      } catch (error) {
+        console.error('Error saving data:', error);
+        alert(error.message);
+      }
+    } else {
+      alert('Please provide valid input for all fields.');
+    }
+  };
+    
 
   const keys = ["steps", "sleep", "exercise", "alcohol", "mood"];
-
-
-
-  //creating tree using training data
-  // const model = new DecisionTree("mood", ["steps", "sleep", "exercise", "alcohol"], syntheticTrainData);
-
-
-  // prints the generated tree
-  // console.log('Generated decision tree:')
-  // model.printTree()
-
-  //calculating accuracy using test data
-  var correct = 0;
-  var wrong = 0;
-
-  // for (let i = 0; i < syntheticTestData.length; i++) {
-  //   let steps = syntheticTestData[i]["steps"];
-  //   let sleep = syntheticTestData[i]["sleep"];
-  //   let exercise = syntheticTestData[i]["exercise"];
-  //   let alcohol = syntheticTestData[i]["alcohol"];
-  //   let actualMood = syntheticTestData[i]["mood"];
-
-  //   let predictedMood = Object.keys(model.classify({ "steps": steps, "sleep": sleep, "exercise": exercise, "alcohol": alcohol }));
-
-  //   if (predictedMood == actualMood) {
-  //     correct++;
-  //   } else {
-  //     wrong++;
-  //   }
-  // }
-
-  result = correct / (correct + wrong);
-
-
-  // const [summary, setSummary] = useState('');
-
-  // const handleSummary = () => {
-  //   const input = {
-  //     'step count': 6000,
-  //     'sleep': 6,
-  //     'water consumption': 1.5,
-  //     'alcohol consumption': 2,
-  //   };
-
-  //   const newSummary = generateSummary(model, input);
-  //   setSummary(newSummary);
-  // };
-
-  // const input = {
-  //   'step count': 6000,
-  //   'sleep': 6,
-  //   'exercise duration': 15,
-  //   'alcohol consumption': 2,
-  // };
-  
-  // const testSummary = model.generateSummary(input);
-  // console.warn(testSummary);
-
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -340,29 +233,7 @@ const HomeScreen = ({email}) => {
         </View>
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <View style={styles.contentWrapper}>
-            {/* <View style={{
-                          borderWidth: 2, borderColor: 'blue',
-                          borderRadius: 10, backgroundColor: 'white',
-                          padding: 5}}>
-              <Text>
-              Number of training data: {syntheticTrainData.length}. There were {correct} correct answers and {wrong} wrong answers.
-                The accuracy is: {result}
-              </Text>
-            </View>
-            <View style={{
-                          borderWidth: 2, borderColor: 'green',
-                          borderRadius: 10, backgroundColor: 'white',
-                          padding: 5}}>
-              <Text>
-                Synthetic Data:
-              </Text>
-              {syntheticData.slice(0, 10).map((data, index) => ( // Display first 10 records
-                <Text key={index}>
-                  Day {index + 1}: Steps: {data.steps}, Sleep: {data.sleep}, Exercise: {data.exercise}, Alcohol: {data.alcohol}, Mood: {data.mood}
-                </Text>
-              ))}
-            </View> */}
-            <Text style={styles.text}>Step count: {steps}</Text>
+            <Text style={styles.text}>Step count: {steps} steps</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your step-count"
@@ -370,11 +241,11 @@ const HomeScreen = ({email}) => {
               onChangeText={handleStepsChange}
               // onSubmitEditing={saveData}
             />
-            <Text style={styles.text}>Hours of sleep: {sleep}</Text>
+            <Text style={styles.text}>Time asleep: {decimalHoursToHoursMinutes(sleep)}</Text>
             <Slider
               style={styles.slider}
               minimumValue={0}
-              maximumValue={14}
+              maximumValue={12}
               step={0.25}
               value={sleep}
               onValueChange={handleSleepChange}
@@ -427,9 +298,20 @@ const HomeScreen = ({email}) => {
             <TouchableOpacity style={styles.saveButton} onPress={saveData}>
               <Text style={styles.saveButtonText}>Save Data</Text>
             </TouchableOpacity> 
+            <Text style={styles.text}>{daysMessage}</Text> 
           </View>
-          <TouchableOpacity style={styles.predictMoodButton} onPress={() => navigation.navigate('PredictMood', { email: userEmail, model: trainedModel })}>
-          <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
+          <TouchableOpacity
+            style={[
+              styles.predictMoodButton,
+              isDataSavedToday && totalDataDays >= 7 ? styles.predictMoodButtonEnabled : styles.predictMoodButtonDisabled
+            ]}
+            onPress={() => {
+              if (isDataSavedToday && totalDataDays >= 7) {
+                navigation.navigate('PredictMood', { email: userEmail, model: trainedModel });
+              }
+            }}
+          >
+            <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
           </TouchableOpacity>
         </ScrollView>
         <Modal
@@ -567,6 +449,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginTop: 10,
   },
+  predictMoodButtonDisabled: {
+    backgroundColor: 'grey',
+  },
+  predictMoodButtonEnabled: {
+    backgroundColor: 'purple',
+  },  
   predictMoodButtonText: {
     color: '#fff',
     fontWeight: 'bold',
