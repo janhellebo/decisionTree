@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Modal, TouchableWithoutFeedback } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import DecisionTree from './decision-tree';
 import analytics from '@react-native-firebase/analytics';
 
+const { width } = Dimensions.get('window'); // Get the screen width
 
 
 const PredictMoodScreen = ({ route }) => {
@@ -58,11 +59,31 @@ const PredictMoodScreen = ({ route }) => {
 
   const { email, model } = route.params;
 
+  const decimalHoursToHoursMinutes = (decimalHours) => {
+    const hours = Math.floor(decimalHours);
+    const minutes = (decimalHours - hours) * 60;
+    return `${hours} hours ${Math.round(minutes)} mins`;
+  };  
 
+  const isNumber = (value) => {
+    return !isNaN(value) && isFinite(value);
+  };
+
+  const isInputValid = (steps, sleep, exercise, alcohol) => {
+    return (
+      isNumber(steps) &&
+      steps.length > 0 &&
+      isNumber(exercise) &&
+      exercise.length > 0 &&
+      isNumber(alcohol) &&
+      alcohol.length > 0 &&
+      sleep !== null 
+    );
+  };  
 
 
   const predictMood = (updateState = true) => {
-    if (steps !== '' && exercise !== '' && alcohol !== '') {
+    if (isInputValid(steps, sleep, exercise, alcohol)) {
       const prediction = model.classify({
         "steps": parseFloat(steps),
         "sleep": sleep,
@@ -92,6 +113,8 @@ const PredictMoodScreen = ({ route }) => {
           alcohol: parseFloat(alcohol),
         }),
       };
+    } else {
+      alert('Please provide valid input for all fields.');
     }
   };
   
@@ -176,11 +199,11 @@ const PredictMoodScreen = ({ route }) => {
               value={steps}
               onChangeText={handleStepsChange}
             />
-            <Text style={styles.text}>Hours of sleep: {sleep}</Text>
+            <Text style={styles.text}>Time asleep: {decimalHoursToHoursMinutes(sleep)}</Text>
             <Slider
               style={styles.slider}
               minimumValue={0}
-              maximumValue={14}
+              maximumValue={12}
               step={0.25}
               value={sleep}
               onValueChange={handleSleepChange}
@@ -192,10 +215,10 @@ const PredictMoodScreen = ({ route }) => {
               value={exercise}
               onChangeText={handleExerciseChange}
             />
-            <Text style={styles.text}>Units of alcohol: {alcohol} units</Text>
+            <Text style={styles.text}>Alcohol consumed: {alcohol} units</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter amount of alchol drank in units"
+              placeholder="Enter amount of alcohol drank in units"
               value={alcohol}
               onChangeText={handleAlcoholChange}
             />
@@ -260,11 +283,11 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   slider: {
-    width: 200,
+    width: width * 0.7,
     height: 40,
   },
   input: {
-    width: 300,
+    width: width * 0.8,
     height: 40,
     borderColor: 'black',
     borderWidth: 1, 
@@ -274,7 +297,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "80%",
+    width: width * 0.8,
   },
   button: {
     width: 80,
@@ -289,10 +312,13 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
+    width: width * 0.6,
+
   },
   predictButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center', 
   },
   predictedMoodText: {
     marginTop: 20,
@@ -301,8 +327,10 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderColor: 'purple',
     borderWidth: 2,
-    borderRadius: 5,
+    borderRadius: 10,
     textAlign: 'center',
+    marginLeft: 10, 
+    marginRight: 10, 
   },
   moodSummaryText: {
     marginTop: 20,
@@ -313,6 +341,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 10,
     textAlign: 'center',
+    marginLeft: 10, 
+    marginRight: 10,
   },
   header: {
     alignSelf: 'flex-end',

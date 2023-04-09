@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DecisionTree from './decision-tree';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground, Modal, TouchableWithoutFeedback } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import { trainingData, testData } from './data/treeData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider'
@@ -18,9 +18,12 @@ import { addDoc, collection, doc, setDoc } from '@react-native-firebase/firestor
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 import analytics from '@react-native-firebase/analytics';
+import ProgressBar from 'react-native-progress/Bar';
 
 
 const Stack = createStackNavigator();
+
+const { width } = Dimensions.get('window'); 
 
 GoogleSignin.configure({
   webClientId: '27440707536-o941tlubbcghbtb879srur1jcfulq88s.apps.googleusercontent.com',
@@ -65,7 +68,7 @@ const HomeScreen = ({email}) => {
   const [exercise, setExercise] = useState('');
   const [alcohol, setAlcohol] = useState('');
   // const [mood, setMood] = useState(5);
-  const [mood, setMood] = useState(null);
+  const [mood, setMood] = useState("No mood selected");
   const [syntheticData, setSyntheticData] = useState([]);
   const [trainedModel, setTrainedModel] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
@@ -131,7 +134,8 @@ const HomeScreen = ({email}) => {
       isNumber(alcohol) &&
       alcohol.length > 0 &&
       sleep !== null &&
-      mood !== null
+      mood !== null &&
+      mood !== "No mood selected"
     );
   };  
 
@@ -145,7 +149,7 @@ const HomeScreen = ({email}) => {
         // Get the current date as a string in the format 'YYYY-MM-DD'
         const currentDate = new Date();
         const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
-        // const tempDate = '2023-3-29';
+        // const tempDate = '2023-5-5';
     
         // Combine the user's ID with the date to create a unique document ID
         const uniqueDocId = `${email}_${dateId}`;
@@ -191,6 +195,8 @@ const HomeScreen = ({email}) => {
           ["steps", "sleep", "exercise", "alcohol"],
           filteredUsersData
         );
+
+        model.printTree();
   
         // 5. Store the trained model in the state
         setTrainedModel(model);
@@ -205,7 +211,7 @@ const HomeScreen = ({email}) => {
         
         // Update daysMessage based on totalDataDays
         if (usersData.length < 7) {
-          setDaysMessage(`You have submitted ${usersData.length} days of data. When you reach 7 days, you will unlock the Predict Mood screen.`);
+          setDaysMessage(`You have submitted ${usersData.length} days of data! When you reach 7 days, you will unlock the Predict Mood screen.`);
         } else {
           setDaysMessage(`You have submitted ${usersData.length} days of data.`);
         }      
@@ -221,6 +227,9 @@ const HomeScreen = ({email}) => {
     
 
   const keys = ["steps", "sleep", "exercise", "alcohol", "mood"];
+
+  const progressValue = totalDataDays >= 7 ? 1 : totalDataDays / 7;
+
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -259,10 +268,10 @@ const HomeScreen = ({email}) => {
               onChangeText={handleExerciseChange}
               // onSubmitEditing={saveData}
             />
-            <Text style={styles.text}>Units of alcohol: {alcohol} units</Text>
+            <Text style={styles.text}>Alcohol consumed: {alcohol} units</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter amount of alchol drank in units"
+              placeholder="Enter amount of alcohol drank in units"
               value={alcohol}
               onChangeText={handleAlcoholChange}
               // onSubmitEditing={saveData}
@@ -298,21 +307,31 @@ const HomeScreen = ({email}) => {
             <TouchableOpacity style={styles.saveButton} onPress={saveData}>
               <Text style={styles.saveButtonText}>Save Data</Text>
             </TouchableOpacity> 
-            <Text style={styles.text}>{daysMessage}</Text> 
+            <Text style={styles.daysText}>{daysMessage}</Text> 
+            <ProgressBar
+              progress={progressValue}
+              width={width * 0.5}
+              height={10}
+              borderRadius={5}
+              borderWidth={0}
+              color={'green'}
+              unfilledColor={'#e0e0e0'}
+              animationType="timing"
+            />
+            <TouchableOpacity
+              style={[
+                styles.predictMoodButton,
+                isDataSavedToday && totalDataDays >= 7 ? styles.predictMoodButtonEnabled : styles.predictMoodButtonDisabled
+              ]}
+              onPress={() => {
+                if (isDataSavedToday && totalDataDays >= 7) {
+                  navigation.navigate('PredictMood', { email: userEmail, model: trainedModel });
+                }
+              }}
+            >
+              <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
+            </TouchableOpacity>            
           </View>
-          <TouchableOpacity
-            style={[
-              styles.predictMoodButton,
-              isDataSavedToday && totalDataDays >= 7 ? styles.predictMoodButtonEnabled : styles.predictMoodButtonDisabled
-            ]}
-            onPress={() => {
-              if (isDataSavedToday && totalDataDays >= 7) {
-                navigation.navigate('PredictMood', { email: userEmail, model: trainedModel });
-              }
-            }}
-          >
-            <Text style={styles.predictMoodButtonText}>Predict Mood</Text>
-          </TouchableOpacity>
         </ScrollView>
         <Modal
           animationType="fade"
@@ -418,12 +437,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     margin: 10,
   },
+  daysText: {
+    fontSize: 12,
+    margin: 10,
+    textAlign: 'center', 
+    paddingHorizontal: 10, 
+    alignSelf: 'center', 
+  },
   slider: {
-    width: 200,
+    width: width * 0.7,
     height: 40,
   },
   input: {
-    width: 300,
+    width: width * 0.8,
     height: 40,
     borderColor: 'black',
     borderWidth: 1, 
@@ -433,7 +459,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "80%",
+    width: width * 0.8,
   },
   button: {
     width: 80,
@@ -448,6 +474,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
+    width: width * 0.6
   },
   predictMoodButtonDisabled: {
     backgroundColor: 'grey',
@@ -458,6 +485,8 @@ const styles = StyleSheet.create({
   predictMoodButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center', // Center the text
+
   },
   signInContainer: {
     flex: 1,

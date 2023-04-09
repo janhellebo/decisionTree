@@ -247,7 +247,7 @@ class DecisionTree {
     }, '');
   }
 
-  // Best Summary so far
+  // Summarise rules in decision tree
   generateSummary(currentMood, userInput) {
     const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
     let bestPath = null;
@@ -295,111 +295,6 @@ class DecisionTree {
   
     return summary;
   }
-  
-  
-  
-
-
-  // generateSummary(currentMood, userInput) {
-  //   const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
-  //   let bestPath = null;
-
-  //   if (currentMood === targetMood) {
-  //     return `You're on the right track! No additional changes needed to maintain ${currentMood} mood.`;
-  //   }    
-  
-  //   const _findPath = (node, targetMood, currentPath) => {
-  //     if (node instanceof Leaf) {
-  //       if (node.predictions.hasOwnProperty(targetMood)) {
-  //         if (!bestPath || currentPath.length < bestPath.length) {
-  //           bestPath = currentPath;
-  //         }
-  //       }
-  //       return;
-  //     }
-  //     _findPath(node.trueBranch, targetMood, [...currentPath, { question: node.question, value: true }]);
-  //     _findPath(node.falseBranch, targetMood, [...currentPath, { question: node.question, value: false }]);
-  //   };
-  
-  //   _findPath(this.decisionTree, targetMood, []);
-  
-  //   if (!bestPath) {
-  //     return `No advice available to improve your mood to ${targetMood}.`;
-  //   }
-  
-  //   let summary = `To improve your mood to ${targetMood}:`;
-  //   let adviceIndex = 1;
-  //   bestPath.forEach((step) => {
-  //     const condition = step.value ? 'increase' : 'decrease';
-  //     const column = step.question.column;
-  //     const adviceValue = step.question.value;
-  
-  //     if ((condition === 'increase' && userInput[column] < adviceValue) ||
-  //         (condition === 'decrease' && userInput[column] > adviceValue)) {
-  //       summary += ` ${adviceIndex}. ${condition} ${column} to ${adviceValue};`;
-  //       adviceIndex++;
-  //     }
-  //   });
-  
-  //   if (adviceIndex === 1) {
-  //     summary = `You're on the right track! No additional changes needed to reach ${targetMood} mood.`;
-  //   }
-  
-  //   return summary;
-  // }
-
-  // generateSummary(currentMood, userInput) {
-  //   const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
-  //   let paths = [];
-  
-  //   const _findPath = (node, targetMood, currentPath) => {
-  //     if (node instanceof Leaf) {
-  //       if (node.predictions.hasOwnProperty(targetMood)) {
-  //         paths.push(currentPath);
-  //       }
-  //       return;
-  //     }
-  //     _findPath(node.trueBranch, targetMood, [...currentPath, { question: node.question, value: true }]);
-  //     _findPath(node.falseBranch, targetMood, [...currentPath, { question: node.question, value: false }]);
-  //   };
-  
-  //   _findPath(this.decisionTree, targetMood, []);
-  
-  //   if (paths.length === 0) {
-  //     return `No advice available to improve your mood to ${targetMood}.`;
-  //   }
-  
-  //   // Sort paths by their length
-  //   paths.sort((a, b) => a.length - b.length);
-  
-  //   let summary = `To improve your mood to ${targetMood}:`;
-  
-  //   // Select the shortest path to the target mood
-  //   const shortestPath = paths[0];
-  
-  //   let adviceIndex = 1;
-  //   shortestPath.forEach((step) => {
-  //     const condition = step.value ? 'increase' : 'decrease';
-  //     const column = step.question.column;
-  //     const adviceValue = step.question.value;
-  
-  //     if ((condition === 'increase' && userInput[column] < adviceValue) ||
-  //         (condition === 'decrease' && userInput[column] > adviceValue)) {
-  //       summary += ` ${adviceIndex}. ${condition} ${column} to ${adviceValue};`;
-  //       adviceIndex++;
-  //     }
-  //   });
-  
-  //   if (adviceIndex === 1) {
-  //     summary = `You're on the right track! No additional changes needed to reach ${targetMood} mood.`;
-  //   }
-  
-  //   return summary;
-  // }
-  
-  
-  
-  
 
 }
 
