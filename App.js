@@ -25,6 +25,23 @@ const Stack = createStackNavigator();
 
 const { width } = Dimensions.get('window'); 
 
+const helpModalText = `Welcome to Willow! Here's a brief tutorial on how to use the home screen (note to enter yesterday's data for all except mood)
+
+Step count: Input yesterday's steps.
+
+Time asleep: Slide to set last night's sleep hours.
+
+Exercise: Input minutes exercised yesterday.
+
+Alcohol: Input units consumed yesterday.
+On average, 1 shot of spirits is 1 unit, a standard glass of wine is 2.1 units, and a pint of beer is 2.3 units.
+
+Mood: Pick a smiley for today's mood.
+
+Save Data: Press to save your inputs.
+
+Predict Mood: Save 7 days of data for a mood prediction.`;
+
 GoogleSignin.configure({
   webClientId: '27440707536-o941tlubbcghbtb879srur1jcfulq88s.apps.googleusercontent.com',
 });
@@ -174,6 +191,7 @@ const HomeScreen = ({email}) => {
           exercise: parseFloat(exercise),
           alcohol: parseFloat(alcohol),
           mood: mood,
+          email,
         });
         alert('Data saved successfully!');
   
@@ -343,7 +361,7 @@ const HomeScreen = ({email}) => {
             <View style={styles.modalOverlay}>
               <View style={styles.modalContent}>
                 <Text style={styles.modalText}>
-                  Now adjust the values to see how your predicted mood changes with different habits!
+                  {helpModalText}
                 </Text>
               </View>
             </View>
@@ -560,10 +578,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
-    width: '80%',
+    width: width * 0.8,
   },
   modalText: {
-    fontSize: 18,
+    fontSize: 14,
   }, 
 });
 
