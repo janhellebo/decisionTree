@@ -49,7 +49,7 @@ const PredictMoodScreen = ({ route }) => {
     await analytics().logEvent('help_modal_press_predict', {
       email,
     });
-    console.log('Help modal pressed on predict screen');
+    console.log('Help modal pressed on predict screen:', email);
   };
 
   const handleHelpButtonPress = () => {
@@ -268,6 +268,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#EDE7F6', // Add this line to change the background color
+ 
     // width: '100%',
   },
   scrollViewContent: {

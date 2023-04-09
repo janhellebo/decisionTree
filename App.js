@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DecisionTree from './decision-tree';
 import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import { trainingData, testData } from './data/treeData';
@@ -156,6 +156,61 @@ const HomeScreen = ({email}) => {
     );
   };  
 
+  // Checks if user has submitted data for today
+  const fetchTodaysData = useCallback(async () => {
+    const currentDate = new Date();
+    const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+    const uniqueDocId = `${email}_${dateId}`;
+    const userCollection = firestore().collection(email);
+    const todaysDoc = await userCollection.doc(uniqueDocId).get();
+
+    if (todaysDoc.exists) {
+      const todaysData = todaysDoc.data();
+      setSteps(todaysData.steps.toString());
+      setSleep(todaysData.sleep);
+      setExercise(todaysData.exercise.toString());
+      setAlcohol(todaysData.alcohol.toString());
+      setMood(todaysData.mood);
+      setIsDataSavedToday(true);
+      setUserEmail(email);
+
+      // Fetch all documents from the Firestore collection with the user's email
+      const snapshot = await userCollection.get();
+      // Convert the fetched documents into an array of objects
+      const usersData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  
+      console.log('usersData:', usersData);
+  
+      const filteredUsersData = usersData.filter((doc) => doc.id !== uniqueDocId);
+  
+      console.log('filteredUsersData:', filteredUsersData);
+  
+      // Create a new decision tree using the fetched data
+      const model = new DecisionTree(
+        "mood",
+        ["steps", "sleep", "exercise", "alcohol"],
+        filteredUsersData
+      );
+
+      setTrainedModel(model);
+
+      // Update the total number of days data is saved
+      setTotalDataDays(snapshot.docs.length);
+
+      // Update daysMessage based on totalDataDays
+      if (snapshot.docs.length < 7) {
+        setDaysMessage(`You have submitted ${snapshot.docs.length} days of data! When you reach 7 days, you will unlock the Predict Mood screen.`);
+      } else {
+        setDaysMessage(`You have submitted ${snapshot.docs.length} days of data.`);
+      }
+    }
+  }, [email]);  
+
+  // Add the useEffect hook that calls fetchTodaysData when the component mounts
+  useEffect(() => {
+    fetchTodaysData();
+  }, [fetchTodaysData]);  
+
   const saveData = async () => {
     if (isInputValid(steps, sleep, exercise, alcohol, mood)) {
       try {
@@ -219,6 +274,7 @@ const HomeScreen = ({email}) => {
         // 5. Store the trained model in the state
         setTrainedModel(model);
         setUserEmail(email);
+        console.log('SetUserEmail works:', userEmail);
         // alert('Data saved and model trained successfully!');     
         
         // Update today's data saved state
@@ -247,6 +303,7 @@ const HomeScreen = ({email}) => {
   const keys = ["steps", "sleep", "exercise", "alcohol", "mood"];
 
   const progressValue = totalDataDays >= 7 ? 1 : totalDataDays / 7;
+
 
 
   return (
@@ -343,6 +400,7 @@ const HomeScreen = ({email}) => {
               ]}
               onPress={() => {
                 if (isDataSavedToday && totalDataDays >= 7) {
+                  console.log('userEmail:', userEmail);
                   navigation.navigate('PredictMood', { email: userEmail, model: trainedModel });
                 }
               }}
