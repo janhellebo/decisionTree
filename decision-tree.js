@@ -252,6 +252,29 @@ class DecisionTree {
     const targetMood = currentMood === 'Low mood' ? 'Neutral' : 'Happy';
     let bestPath = null;
 
+    // Copy of the decimalHoursToHoursMinutes function
+    const decimalHoursToHoursMinutes = (decimalHours) => {
+      const hours = Math.floor(decimalHours);
+      const minutes = (decimalHours - hours) * 60;
+      return `${hours} hours ${Math.round(minutes)} mins`;
+    };
+
+    // New formatValue function
+    const formatValue = (column, value) => {
+      switch (column) {
+        case 'steps':
+          return `${value} steps`;
+        case 'sleep':
+          return decimalHoursToHoursMinutes(value);
+        case 'exercise':
+          return `${value} minutes`;
+        case 'alcohol':
+          return `${value} units`;
+        default:
+          return value;
+      }
+    };    
+
     if (currentMood === targetMood) {
       return `You're on the right track! No additional changes needed to maintain ${currentMood} mood.`;
     }
@@ -284,8 +307,9 @@ class DecisionTree {
   
       if ((condition === 'increase' && userInput[column] < adviceValue) ||
           (condition === 'decrease' && userInput[column] > adviceValue)) {
-        summary += ` ${adviceIndex}. ${condition} ${column} to ${adviceValue};`;
-        adviceIndex++;
+          summary += ` Try to ${condition} your daily ${column} to ${formatValue(column, adviceValue)}.`;
+          // ${adviceIndex}
+          adviceIndex++;
       }
     });
   

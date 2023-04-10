@@ -129,7 +129,9 @@ const PredictMoodScreen = ({ route }) => {
 
     // Check if the prediction matches the actual mood
     const isPredictionCorrect = mood === actualMood;
-    setPredictedMood(`${mood} (prediction ${isPredictionCorrect ? 'correct' : 'incorrect'})`);
+    setPredictedMood(`${mood} 
+    (prediction ${isPredictionCorrect ? 'correct' : 'incorrect'})
+    The model will improve over time as you provide more data!`);
 
     // Log the prediction result using Google Analytics
     await analytics().logEvent('mood_prediction_result', {
@@ -190,12 +192,17 @@ const PredictMoodScreen = ({ route }) => {
             <Text style={styles.helpIcon}>?</Text>
           </TouchableOpacity>
         </View>        
-        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.contentWrapper}>
             <Text style={styles.text}>Step count: {steps}</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your step-count"
+              placeholderTextColor="#757575"
+              keyboardType="number-pad"
               value={steps}
               onChangeText={handleStepsChange}
             />
@@ -212,6 +219,8 @@ const PredictMoodScreen = ({ route }) => {
             <TextInput
               style={styles.input}
               placeholder="Enter amount of exercise done in minutes"
+              placeholderTextColor="#757575"
+              keyboardType="number-pad"
               value={exercise}
               onChangeText={handleExerciseChange}
             />
@@ -219,6 +228,8 @@ const PredictMoodScreen = ({ route }) => {
             <TextInput
               style={styles.input}
               placeholder="Enter amount of alcohol drank in units"
+              placeholderTextColor="#757575"
+              keyboardType="number-pad"
               value={alcohol}
               onChangeText={handleAlcoholChange}
             />
@@ -232,7 +243,7 @@ const PredictMoodScreen = ({ route }) => {
               <Text style={styles.predictButtonText}>Predict Mood</Text>
             </TouchableOpacity>
             <Text style={styles.predictedMoodText}>
-              {predictedMood && `According to your previous days of data, your predicted mood is ${predictedMood}`}
+              {predictedMood && `According to the previous days of data, your predicted mood is ${predictedMood}`}
             </Text>
             <Text style={styles.moodSummaryText}>
               {moodSummary}

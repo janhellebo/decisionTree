@@ -315,12 +315,17 @@ const HomeScreen = ({email}) => {
             <Text style={styles.helpIcon}>?</Text>
           </TouchableOpacity>
         </View>
-        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.contentWrapper}>
             <Text style={styles.text}>Step count: {steps} steps</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your step-count"
+              placeholderTextColor="#757575"
+              keyboardType="number-pad"
               value={steps}
               onChangeText={handleStepsChange}
               // onSubmitEditing={saveData}
@@ -339,6 +344,8 @@ const HomeScreen = ({email}) => {
             <TextInput
               style={styles.input}
               placeholder="Enter amount of exercise done in minutes"
+              placeholderTextColor="#757575"
+              keyboardType="number-pad"
               value={exercise}
               onChangeText={handleExerciseChange}
               // onSubmitEditing={saveData}
@@ -347,6 +354,8 @@ const HomeScreen = ({email}) => {
             <TextInput
               style={styles.input}
               placeholder="Enter amount of alcohol drank in units"
+              placeholderTextColor="#757575"
+              keyboardType="number-pad"
               value={alcohol}
               onChangeText={handleAlcoholChange}
               // onSubmitEditing={saveData}
@@ -508,6 +517,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center', 
     width: '100%', 
+    marginBottom: 10,
   },
   text: {
     fontSize: 20,
