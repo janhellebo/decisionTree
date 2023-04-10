@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DecisionTree from './decision-tree';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Button, ImageBackground, Modal, TouchableWithoutFeedback, Dimensions, Keyboard, FlatList, ActivityIndicator, LogBox } from 'react-native';
 import { trainingData, testData } from './data/treeData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider'
@@ -19,6 +19,11 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 import analytics from '@react-native-firebase/analytics';
 import ProgressBar from 'react-native-progress/Bar';
+import {Table, Row, Rows} from 'react-native-table-component';
+
+
+LogBox.ignoreLogs(['Invalid prop textStyle of type array supplied to Cell']);
+LogBox.ignoreLogs(['Invalid prop `textStyle` of type `array` supplied to `Cell`, expected `object`.']);
 
 
 const Stack = createStackNavigator();
@@ -56,6 +61,82 @@ const signInWithGoogle = async () => {
   } catch (error) {
     console.error(error);
   }
+};
+
+// Allow users to see their data
+const UserDataScreen = ({route}) => {
+  const {email} = route.params;
+  const [userData, setUserData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const userCollection = firestore().collection(email);
+      const snapshot = await userCollection.get();
+      const usersData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      setUserData(usersData);
+      console.log(usersData);
+      setIsLoading(false);
+    };
+    fetchData();
+  }, [email]);
+
+  const decimalHoursToHoursMinutes = (decimalHours) => {
+    const hours = Math.floor(decimalHours);
+    const minutes = (decimalHours - hours) * 60;
+    return `${hours} hours ${Math.round(minutes)} mins`;
+  };  
+
+  // Extract and format date from id
+  const formattedUserData = userData.map((data) => {
+    const [email, date] = data.id.split("_");
+    return {...data, id: date};
+  });
+
+  // Update the renderItem function
+  const renderItem = ({item}) => (
+    <View style={styles.userDataItem}>
+      <Table borderStyle={styles.tableBorder} style={styles.table}>
+        <Row
+          data={['Attribute', 'Data']} // Add a header row
+          style={styles.tableHeader}
+          textStyle={styles.tableHeaderText}
+        />
+        <Rows
+          data={[
+            [`Date`, `${item.id}`],
+            [`Steps`, `${item.steps} steps`],
+            [`Sleep`, `${decimalHoursToHoursMinutes(item.sleep)}`],
+            [`Exercise`, `${item.exercise} minutes`],
+            [`Alcohol`, `${item.alcohol} units`],
+            [`Mood`, `${item.mood}`],
+          ]}
+          textStyle={styles.tableText}
+        />
+      </Table>
+    </View>
+  );
+
+
+  return (
+    <SafeAreaView style={styles.safeAreaContainer}>
+      <View style={styles.container}>
+        <Text style={styles.text}>Your Data:</Text>
+        {isLoading ? (
+          <ActivityIndicator size="large" color="purple" /> // Show loading indicator when isLoading is true
+        ) : formattedUserData.length > 0 ? (
+          <FlatList
+            data={formattedUserData}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+          />
+        ) : (
+          <Text style={styles.noDataText}>No data saved yet</Text>
+        )}
+      </View>
+    </SafeAreaView>
+  );
 };
 
 const HomeScreen = ({email}) => {
@@ -127,10 +208,22 @@ const HomeScreen = ({email}) => {
     console.log('Logged help modal press (home screen) event');
   };
 
+  const logYourDataButtonPress = async () => {
+    await analytics().logEvent('your_data_button_press_home', {
+      email,
+    });
+    console.log('Logged your data button press (home screen) event');
+  };
+
   const handleHelpButtonPress = () => {
     toggleHelpModal();
     logHelpModalPress();
   };  
+
+  const handleYourDataButtonPress = () => {
+    logYourDataButtonPress();
+    navigation.navigate('UserData', {email});
+  };
 
   const decimalHoursToHoursMinutes = (decimalHours) => {
     const hours = Math.floor(decimalHours);
@@ -199,7 +292,8 @@ const HomeScreen = ({email}) => {
 
       // Update daysMessage based on totalDataDays
       if (snapshot.docs.length < 7) {
-        setDaysMessage(`You have submitted ${snapshot.docs.length} days of data! When you reach 7 days, you will unlock the Predict Mood screen.`);
+        const dayString = snapshot.docs.length === 1 ? 'day' : 'days';
+        setDaysMessage(`You have submitted ${snapshot.docs.length} ${dayString} of data! When you reach 7 days, you will unlock the Predict Mood screen.`);
       } else {
         setDaysMessage(`You have submitted ${snapshot.docs.length} days of data.`);
       }
@@ -221,7 +315,7 @@ const HomeScreen = ({email}) => {
         // Get the current date as a string in the format 'YYYY-MM-DD'
         const currentDate = new Date();
         const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
-        // const tempDate = '2023-5-5';
+        // const tempDate = '2023-5-13';
     
         // Combine the user's ID with the date to create a unique document ID
         const uniqueDocId = `${email}_${dateId}`;
@@ -285,7 +379,8 @@ const HomeScreen = ({email}) => {
         
         // Update daysMessage based on totalDataDays
         if (usersData.length < 7) {
-          setDaysMessage(`You have submitted ${usersData.length} days of data! When you reach 7 days, you will unlock the Predict Mood screen.`);
+          const dayString = usersData.length === 1 ? 'day' : 'days';
+          setDaysMessage(`You have submitted ${usersData.length} ${dayString} of data! When you reach 7 days, you will unlock the Predict Mood screen.`);
         } else {
           setDaysMessage(`You have submitted ${usersData.length} days of data.`);
         }      
@@ -310,14 +405,22 @@ const HomeScreen = ({email}) => {
     <SafeAreaView style={styles.safeAreaContainer}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleHelpButtonPress} style={styles.helpButton}>
-            <Text style={styles.helpText}>Help</Text>
-            <Text style={styles.helpIcon}>?</Text>
-          </TouchableOpacity>
+          <View style={styles.leftContainer}>
+            <TouchableOpacity onPress={handleYourDataButtonPress} style={styles.yourDataButton}>
+              <Text style={styles.yourDataText}>Your data</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.rightContainer}>
+            <TouchableOpacity onPress={handleHelpButtonPress} style={styles.helpButton}>
+              <Text style={styles.helpText}>Help</Text>
+              <Text style={styles.helpIcon}>?</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <ScrollView 
           contentContainerStyle={styles.scrollViewContent}
           showsVerticalScrollIndicator={false}
+          onTouchStart={Keyboard.dismiss}
         >
           <View style={styles.contentWrapper}>
             <Text style={styles.text}>Step count: {steps} steps</Text>
@@ -355,7 +458,7 @@ const HomeScreen = ({email}) => {
               style={styles.input}
               placeholder="Enter amount of alcohol drank in units"
               placeholderTextColor="#757575"
-              keyboardType="number-pad"
+              keyboardType="decimal-pad"
               value={alcohol}
               onChangeText={handleAlcoholChange}
               // onSubmitEditing={saveData}
@@ -486,6 +589,7 @@ const App = () => {
               {(props) => <HomeScreen {...props} email={email} />}
               </Stack.Screen>
             <Stack.Screen name="PredictMood" component={PredictMoodScreen} />
+            <Stack.Screen name="UserData" component={UserDataScreen} />
           </>
         ) : (
           <Stack.Screen name="SignIn">
@@ -506,8 +610,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    // alignItems: 'center',
+    // justifyContent: 'center',
     // width: '100%',
   },
   scrollViewContent: {
@@ -619,9 +723,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   header: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 10,
-    paddingTop: 5,
+    // alignSelf: 'flex-end',
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  leftContainer: {
+    flex: 1,
+  },
+  rightContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
   helpButton: {
     flexDirection: 'row',
@@ -651,6 +764,45 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 14,
   }, 
+  yourDataButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    // position: 'absolute',
+    // top: 5,
+    // left: 10,
+  },
+  yourDataText: {
+    fontSize: 18,
+    color: 'blue',
+  },
+  tableBorder: {
+    borderWidth: 0.5,
+    borderColor: '#c8c7cc',
+  },
+  userDataItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#c8c7cc',
+  },
+  tableText: {
+    fontSize: 14,
+    padding: 5,
+  },
+  tableHeader: {
+    backgroundColor: '#f1f8ff',
+  },
+  tableHeaderText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    padding: 5,
+  },
+  table: {
+    width: '100%',
+  },
+  noDataText: {
+    fontSize: 18,
+    color: 'grey',
+  },
 });
 
 export default App;

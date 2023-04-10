@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Modal, TouchableWithoutFeedback, Dimensions } from 'react-native';
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Modal, TouchableWithoutFeedback, Dimensions, Keyboard, ActivityIndicator } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useNavigation } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
@@ -81,6 +81,22 @@ const PredictMoodScreen = ({ route }) => {
     );
   };  
 
+  const saveAccuracyResult = async (isPredictionCorrect) => {
+    try {
+      const currentDate = new Date();
+      const dateId = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()}`;
+      const uniqueDocId = `${email}_accuracy_${dateId}`;
+      const accuracyRef = firestore().collection("results").doc(uniqueDocId);
+  
+      await accuracyRef.set({
+        email,
+        date: dateId,
+        accuracy: isPredictionCorrect ? 1 : 0,
+      });
+    } catch (error) {
+      console.error("Error saving accuracy result:", error);
+    }
+  };  
 
   const predictMood = (updateState = true) => {
     if (isInputValid(steps, sleep, exercise, alcohol)) {
@@ -140,6 +156,17 @@ const PredictMoodScreen = ({ route }) => {
       actual: actualMood,
       isPredictionCorrect,
     });
+
+    if (isPredictionCorrect) {
+      await analytics().logEvent('mood_prediction_correct', {
+        email,
+      });
+    } else {
+      await analytics().logEvent('mood_prediction_incorrect', {
+        email,
+      });
+    }
+    await saveAccuracyResult(isPredictionCorrect);
   };
 
   const logPredictMoodPress = async () => {
@@ -170,6 +197,7 @@ const PredictMoodScreen = ({ route }) => {
           setLoading(false); 
         }
       } catch (error) {
+        setLoading(false);
         console.error('Error fetching data:', error);
       }
     };
@@ -186,86 +214,93 @@ const PredictMoodScreen = ({ route }) => {
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleHelpButtonPress} style={styles.helpButton}>
-            <Text style={styles.helpText}>Help</Text>
-            <Text style={styles.helpIcon}>?</Text>
-          </TouchableOpacity>
-        </View>        
-        <ScrollView 
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.contentWrapper}>
-            <Text style={styles.text}>Step count: {steps}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your step-count"
-              placeholderTextColor="#757575"
-              keyboardType="number-pad"
-              value={steps}
-              onChangeText={handleStepsChange}
-            />
-            <Text style={styles.text}>Time asleep: {decimalHoursToHoursMinutes(sleep)}</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={12}
-              step={0.25}
-              value={sleep}
-              onValueChange={handleSleepChange}
-            />
-            <Text style={styles.text}>Exercise: {exercise} minutes</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter amount of exercise done in minutes"
-              placeholderTextColor="#757575"
-              keyboardType="number-pad"
-              value={exercise}
-              onChangeText={handleExerciseChange}
-            />
-            <Text style={styles.text}>Alcohol consumed: {alcohol} units</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter amount of alcohol drank in units"
-              placeholderTextColor="#757575"
-              keyboardType="number-pad"
-              value={alcohol}
-              onChangeText={handleAlcoholChange}
-            />
-            <TouchableOpacity
-              style={styles.predictButton}
-              onPress={() => {
-                logPredictMoodPress();
-                predictMood();
-              }}
+        {loading ? (
+          <ActivityIndicator size="large" color="purple" /> // Show loading indicator when isLoading is true
+        ) : (
+          <>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={handleHelpButtonPress} style={styles.helpButton}>
+                <Text style={styles.helpText}>Help</Text>
+                <Text style={styles.helpIcon}>?</Text>
+              </TouchableOpacity>
+            </View>        
+            <ScrollView 
+              contentContainerStyle={styles.scrollViewContent}
+              showsVerticalScrollIndicator={false}
+              onTouchStart={Keyboard.dismiss}
             >
-              <Text style={styles.predictButtonText}>Predict Mood</Text>
-            </TouchableOpacity>
-            <Text style={styles.predictedMoodText}>
-              {predictedMood && `According to the previous days of data, your predicted mood is ${predictedMood}`}
-            </Text>
-            <Text style={styles.moodSummaryText}>
-              {moodSummary}
-            </Text>                        
-          </View>
-        </ScrollView>
-        <Modal
-          animationType="fade"
-          transparent
-          visible={helpModalVisible}
-          onRequestClose={toggleHelpModal}
-        >
-          <TouchableWithoutFeedback onPress={toggleHelpModal}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalText}>
-                  Now adjust the values to see how your predicted mood changes with different habits!
+              <View style={styles.contentWrapper}>
+                <Text style={styles.text}>Step count: {steps}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your step-count"
+                  placeholderTextColor="#757575"
+                  keyboardType="number-pad"
+                  value={steps}
+                  onChangeText={handleStepsChange}
+                />
+                <Text style={styles.text}>Time asleep: {decimalHoursToHoursMinutes(sleep)}</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={12}
+                  step={0.25}
+                  value={sleep}
+                  onValueChange={handleSleepChange}
+                />
+                <Text style={styles.text}>Exercise: {exercise} minutes</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter amount of exercise done in minutes"
+                  placeholderTextColor="#757575"
+                  keyboardType="number-pad"
+                  value={exercise}
+                  onChangeText={handleExerciseChange}
+                />
+                <Text style={styles.text}>Alcohol consumed: {alcohol} units</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter amount of alcohol drank in units"
+                  placeholderTextColor="#757575"
+                  keyboardType="decimal-pad"
+                  value={alcohol}
+                  onChangeText={handleAlcoholChange}
+                />
+                <TouchableOpacity
+                  style={styles.predictButton}
+                  onPress={() => {
+                    logPredictMoodPress();
+                    predictMood();
+                  }}
+                >
+                  <Text style={styles.predictButtonText}>Predict Mood</Text>
+                </TouchableOpacity>
+                <Text style={styles.predictedMoodText}>
+                  {predictedMood && `According to the previous days of data, your predicted mood is ${predictedMood}`}
                 </Text>
+                <Text style={styles.moodSummaryText}>
+                  {moodSummary}
+                </Text>                        
               </View>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>        
+            </ScrollView>
+            <Modal
+              animationType="fade"
+              transparent
+              visible={helpModalVisible}
+              onRequestClose={toggleHelpModal}
+            >
+              <TouchableWithoutFeedback onPress={toggleHelpModal}>
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <Text style={styles.modalText}>
+                      Now adjust the values to see how your predicted mood changes with different habits!
+                    </Text>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </Modal>  
+          </>
+        )}      
       </View>
     </SafeAreaView>
   );
@@ -359,8 +394,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignSelf: 'flex-end',
-    paddingHorizontal: 10,
-    paddingTop: 5,
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   helpButton: {
     flexDirection: 'row',
